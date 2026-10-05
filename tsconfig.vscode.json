@@ -1,0 +1,24 @@
+{
+  // The VS Code lane: beethoven-vscode's options (extension/tsconfig.json), Node16 and CommonJS, run
+  // under TypeScript 5.9.3 and under 7.0.2, which VS Code's main pins. One deliberate difference:
+  // "types" is empty where VS Code names node, vscode and mocha. Run it through `npm run
+  // typecheck:vscode` (and `typecheck:vscode7`), which compiles the files at extension/src/base under
+  // a package.json with no "type", as VS Code's is: run directly against src/, the files would read as
+  // ES modules, because base's own package.json says "module".
+  "compilerOptions": {
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "types": [],
+    "strict": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"]
+}
