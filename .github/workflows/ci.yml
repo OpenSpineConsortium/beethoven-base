@@ -1,0 +1,48 @@
+name: ci
+# beethoven-base's checks. No secret: nothing here can reach a grid, claude.ai, any account or
+# another repository, and no step runs Claude Code. Both jobs' names are the required checks in
+# .github/rulesets/main.json; change a name in both places together.
+#
+# gate: `npm run gate`, the same command the pre-push hook runs: the three typecheck lanes (the VS
+# Code lane under TypeScript 5.9.3 and 7.0.2), the tools lane, the posture scan, the edition lists,
+# the vitest suites against throwaway git repositories, and check.mjs on this Node.
+#
+# check.mjs on Node 18: the copy's check runs in every edition's CI and pre-push, and desktop's
+# manifest says Node 18 or later, so it and the vendor tool that writes the copy run here on Node 18,
+# on Linux and on Windows (its paths), with no npm ci: they need no package.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run gate
+
+  node18:
+    name: check.mjs on Node 18 (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: node test/node18/check.test.mjs
