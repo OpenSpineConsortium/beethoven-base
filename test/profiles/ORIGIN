@@ -1,0 +1,4 @@
+repository OpenSpineConsortium/hpcworker
+commit 3b22e706f773bbf018ef2a5460e948aafb7f7745
+export profiles 1
+sha256 cd718ac844f63cf6f9b8d80154597cd582da7a69dcb0d2270be92f860aa85098 wayne.json

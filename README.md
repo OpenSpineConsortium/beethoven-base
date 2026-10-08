@@ -5,8 +5,8 @@ beethoven-extension browser edition and beethoven-vscode). It is a small, pure T
 with no UI, no I/O and no dependencies.
 
 It is a sealed unit under the ecosystem's interface standard. What it offers is listed in one place,
-`interface/INTERFACE.json`: at design step 9, one export per edition (`desktop`, `browser`,
-`vscode`), each the modules that edition takes, with an integer version. Each edition takes its
+`interface/INTERFACE.json`: one export per edition (`desktop` and `browser` today, `vscode` from
+design step 9), each the modules that edition takes, with an integer version. Each edition takes its
 export with its own `interface/pull.sh`, from GitHub at a commit base's `main` contains, and checks
 the copy against its `ORIGIN` record in its own tests, with no secret. No tool of base's runs in an
 edition, and base reads only what an edition publishes: from design step 14, the lag report reads
@@ -22,7 +22,8 @@ the editions.
 npm ci && npm run gate
 ```
 
-The modules arrive with design step 9. This is the skeleton.
+The first module is `src/profile.ts`, the reader of a deployment's site profile (Linear BEE-218);
+the others arrive with design step 9.
 
 Beethoven runs Claude Code and is not an Anthropic product; "Claude" and "Claude Code" are
 Anthropic's marks, used here to say what it runs; "Open OnDemand" is the mark of its publisher.

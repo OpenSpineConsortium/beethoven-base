@@ -2,8 +2,62 @@
  "format": 1,
  "name": "beethoven-base",
  "repository": "OpenSpineConsortium/beethoven-base",
- "summary": "The shared parsers and rules of the three Beethoven editions: pure TypeScript each edition carries byte for byte inside its own source tree and compiles; the modules and their exports arrive with design step 9.",
+ "summary": "The shared parsers and rules of the three Beethoven editions: pure TypeScript each edition carries byte for byte inside its own source tree and compiles. The first module is profile.ts, the site profile reader (Linear BEE-218); the other modules, and the VS Code edition's export, arrive with design step 9.",
  "standard": "https://github.com/OpenSpineConsortium/beethoven/blob/main/INTERFACES.md",
- "exports": [],
- "imports": []
+ "exports": [
+  {
+   "id": "desktop",
+   "kind": "files",
+   "version": 1,
+   "summary": "What the desktop edition compiles into its own source tree: profile.ts, the reader of a deployment's site profile (the keys clients read, the deployment a portal or login node belongs to, the ssh door, the run directories and the path rules).",
+   "paths": [
+    "src/profile.ts"
+   ],
+   "consumers": [
+    "OpenSpineConsortium/beethoven-desktop"
+   ]
+  },
+  {
+   "id": "browser",
+   "kind": "files",
+   "version": 1,
+   "summary": "What the browser edition compiles into its own source tree: profile.ts, the reader of a deployment's site profile (the keys clients read, the deployment a portal or login node belongs to, the ssh door, the run directories and the path rules).",
+   "paths": [
+    "src/profile.ts"
+   ],
+   "consumers": [
+    "OpenSpineConsortium/beethoven-extension"
+   ]
+  }
+ ],
+ "imports": [
+  {
+   "repository": "OpenSpineConsortium/hpcworker",
+   "export": "profiles",
+   "version": 1,
+   "into": "test/profiles",
+   "origin": "test/profiles/ORIGIN"
+  },
+  {
+   "repository": "OpenSpineConsortium/hpcworker",
+   "export": "module-schema",
+   "version": 1,
+   "into": "test/module-schema",
+   "origin": "test/module-schema/ORIGIN"
+  },
+  {
+   "repository": "OpenSpineConsortium/beethoven-sites",
+   "export": "modules",
+   "version": 1,
+   "into": "test/site-modules",
+   "origin": "test/site-modules/ORIGIN"
+  },
+  {
+   "repository": "OpenSpineConsortium/beethoven-sites",
+   "export": "example-modules",
+   "version": 1,
+   "into": "test/site-examples",
+   "origin": "test/site-examples/ORIGIN"
+  }
+ ]
 }

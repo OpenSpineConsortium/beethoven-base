@@ -8,8 +8,9 @@ write: the meaning of what the grid writes (the `HPCW-STEP` lines, `status --jso
 answers), the Claude Code link shapes, the subscription sign-in rule, the strip and redaction lists,
 the diagnostics engine. A fix made here reaches every edition the same way. It holds nothing a
 student reads and nothing that runs: the editions keep their UI, their sentences, their platform
-calls and their SSH stacks. This is the skeleton (design section 10, step 6), rebuilt on 2026-10-08
-to the ecosystem's interface standard; the 13 modules, about 550 lines, come with step 9. Vendor:
+calls and their SSH stacks. The skeleton (design section 10, step 6) was rebuilt on 2026-10-08 to
+the ecosystem's interface standard; the first of the 13 modules, `profile.ts`, came before step 9
+(Linear BEE-218), and the other 12, about 500 lines, come with it. Vendor:
 Gregory Schwing, trading as OpenSpineConsortium. Beethoven runs Claude Code and is not an Anthropic
 product; "Claude" and "Claude Code" are Anthropic's marks, used here to say what it runs; "Open
 OnDemand" is the mark of its publisher.
@@ -38,12 +39,15 @@ OnDemand" is the mark of its publisher.
   Base never defines a format. It parses what hpcworker's real writer makes, and from step 9 its
   tests run against hpcworker's `contract` export (schemas, line grammar, rules and vectors), taken
   with `interface/pull.sh` into `test/hpcworker/`. That copy is test data and is in no export. A
-  format changes in hpcworker first, against its contract, then here, then in each edition.
+  format changes in hpcworker first, against its contract, then here, then in each edition. The site
+  profile's keys and types are hpcworker's `module-schema` export; `profile.ts` reads only what it
+  states, and a key it lacks (a match list, a text bundle) is added there first, then read here.
 - Base reads, runs and copies nothing from another repository's checkout, and imports nothing of an
   edition's. An edition takes base only through its own export, with its own `interface/pull.sh`,
   never edits its copy, and changes base through a pull request here.
 - hpcworker holds nothing for base, and no hpcworker workflow writes here. The site profiles stay
-  out of base: desktop and the browser take hpcworker's `profiles` export themselves; VS Code holds
+  out of base's exports: desktop and the browser take hpcworker's `profiles` export themselves
+  (base's `test/profiles/` is test data `profile.ts` is read against, in no export); VS Code holds
   no profile today, adopts the standard at design step 13 and reads the profile from 7.0.0.
 - The lab's shared copy is never called outdated. `FRAMEWORK_MIN` is a fact in the lab lead's
   diagnostics only (D6). Within `v:1` changes are additive only, so an older copy still parses.
@@ -154,8 +158,8 @@ fails (the posture scan refuses the triple-slash directive that would bring them
 compiles one export's modules alone; what keeps an export whole is the export check below, over the
 imports the posture scan allows.
 
-What each edition takes is its export in `interface/INTERFACE.json` (from step 9: `desktop`,
-`browser`, `vscode`, kind `files`, one path per module under `src/`); that file is the one place.
+What each edition takes is its export in `interface/INTERFACE.json` (`desktop` and `browser` today,
+`vscode` from step 9; kind `files`, one path per module under `src/`); that file is the one place.
 `tools/exports.mjs`, run by `npm run posture`, fails an export one of whose paths matches no tracked
 file, an edition's export with a path outside `src/` (its copy lands below the folder all its paths
 share, so every module would move one folder down), or an export that carries a module without a
@@ -227,8 +231,8 @@ npm run gate                 # all of the below, as the pre-push hook and CI run
 npm run typecheck            # the lanes: desktop, browser, vscode (5.9.3), vscode (7.0.2)
 npm run typecheck:tools      # the tools and the tests (checkJs, strict)
 npm run posture              # the source rules over src/, then the export check (tools/exports.mjs)
-npm test                     # vitest: the boundary test, the export check, the posture scan
-bash interface/pull.sh --all # every import (none yet), through your own gh sign-in
+npm test                     # vitest: the boundary test, the export check, the posture scan, the profile reader
+bash interface/pull.sh --all # every import, through your own gh sign-in
 ```
 
 - **Node versions.** Development needs Node 22.12 or later, which vitest 5 requires. The modules
@@ -275,11 +279,14 @@ bash interface/pull.sh --all # every import (none yet), through your own gh sign
 
 ## Layout
 
-- `src/`: the modules. Until step 9 it holds only the placeholder `index.ts`, which no export lists.
-- `interface/`: `INTERFACE.json` (what base offers and takes; format 1, `exports` and `imports` empty
-  until step 9), `pull.sh` (base's own puller, ported from beethoven-desktop's, with refusals
-  desktop's lacks: an import folder outside `test/<name>`, a link on the way, a `.part` name) and
-  `README.md`.
+- `src/`: the modules: `profile.ts` (the site profile reader: the keys clients read with
+  module-schema 1's types, `deploymentFor` by the portal's origin or the login node and never a
+  default, `sshTargetOf`, `stateDirOf`, `expandPath` on a word boundary, `sharedRootOf`,
+  `portalOriginOf`, `restricts`), and the placeholder `index.ts`, which no export lists.
+- `interface/`: `INTERFACE.json` (what base offers and takes; format 1, the exports `desktop` and
+  `browser`, the four test imports), `pull.sh` (base's own puller, ported from beethoven-desktop's,
+  with refusals desktop's lacks: an import folder outside `test/<name>`, a link on the way, a
+  `.part` name) and `README.md`.
 - `tools/`:
   - `posture.mjs`: the source rules;
   - `exports.mjs`: every export's paths name tracked files, an edition's stay under `src/`, and each
@@ -294,9 +301,15 @@ bash interface/pull.sh --all # every import (none yet), through your own gh sign
     or reusable workflow, a package fetched from GitHub, a fetched script piped into a shell, a link
     out of the repository, an `ORIGIN` no import declares), and the puller;
   - `origin.ts`: the `ORIGIN` check, which also refuses a link and a record of no file;
+  - `profile.test.ts`: `profile.ts` once per deployment, real and synthetic; `compose.ts`, the
+    composition rule written again from `module-schema` (test code), shown to give hpcworker's own
+    profile byte for byte before it composes the example;
   - `exports.test.ts`, `posture.test.ts`, `index.test.ts`;
   - `fixtures.mjs`: throwaway folders and git repositories;
-  - `hpcworker/`: from step 9, hpcworker's `contract` export with its `ORIGIN`.
+  - the imports, each with its `ORIGIN`, taken with `interface/pull.sh` from GitHub (first on
+    2026-10-08; `--pinned --all` took back the same bytes): `profiles/` and `module-schema/`
+    (hpcworker), `site-modules/` and `site-examples/` (beethoven-sites' `modules` and
+    `example-modules`); from step 9, `hpcworker/`, hpcworker's `contract` export.
 - `docs/DESIGN.md`.
 - `.githooks/pre-push`, `.github/workflows/` (`ci.yml`, `automerge.yml`, `rulesets.yml`) and
   `.github/rulesets/main.json`.
@@ -310,7 +323,5 @@ empty list of exports.
 - **Check against something outside the computation**: hpcworker's real vectors, the edition's own
   compiler options, a built bundle, a mutation that must turn a test red.
 - **Say plainly what is not known.** "Not yet measured" is the preferred form. Not yet measured:
-  - `interface/pull.sh` run against GitHub from this repository (base takes nothing yet; desktop's
-    copy of the same script wrote desktop's committed `ORIGIN` records);
   - whether each edition's own scans and bundlers accept an `ORIGIN` file inside its source folder;
   - the organisation's GitHub plan, which decides the environments.

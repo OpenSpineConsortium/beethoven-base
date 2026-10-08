@@ -9,8 +9,8 @@
 #   bash interface/pull.sh [--ref REF] --all        every import
 #
 # FOLDER is an import's "into", a folder of its own directly under test/ (base takes test data only, so
-# no pull can write over the repository's own files). beethoven-base takes nothing yet (its imports
-# are []); design step 9 adds hpcworker's contract export into test/hpcworker. REF must be a commit
+# no pull can write over the repository's own files): the test data src/profile.ts is read against
+# today, and from design step 9 hpcworker's contract export in test/hpcworker. REF must be a commit
 # the provider's default branch contains (a merged change, never a pull request's branch), and only
 # the files the provider's interface/INTERFACE.json lists under the import's export, at the version
 # the import names, at that commit, are taken, each at its path below the folder the export's paths

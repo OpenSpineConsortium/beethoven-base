@@ -7,9 +7,9 @@
 // patterns are hpcworker's framework/tests/test_boundary.py's, ported through beethoven-desktop's
 // test/boundary.test.ts, with the forms those two miss added (a path given as separate arguments, an
 // action or reusable workflow of another repository, a package fetched from GitHub, a fetched script
-// piped into a shell, a link); no network and no secret. Base takes nothing yet, so rule 3 and
-// interface/pull.sh are proven here on throwaway imports of the tests' own, the puller against a
-// stand-in for gh, before the first real import (design step 9) depends on them.
+// piped into a shell, a link); no network and no secret. Rule 3 runs on every import, and with
+// interface/pull.sh is also proven on throwaway imports of the tests' own, the puller against a
+// stand-in for gh, so each refusal is shown without the network.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';

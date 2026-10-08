@@ -7,9 +7,10 @@ may change in any pull request.
 
 ## What it offers
 
-Nothing yet: `exports` is empty, because the skeleton has no module (`src/index.ts` is a placeholder
-no export lists). The modules arrive with design step 9 (`docs/DESIGN.md`, section 10) as three
-exports:
+Two exports so far, `desktop` and `browser`, each with one module: `src/profile.ts`, the reader of a
+deployment's site profile (Linear BEE-218). The other modules, and the `vscode` export, arrive with
+design step 9 (`docs/DESIGN.md`, section 10); VS Code takes `profile.ts` only from its 7.0.0, as
+the table in section 2 says. `src/index.ts` is a placeholder no export lists. The exports at step 9:
 
 | Export | Kind | Paths | Taken by |
 | --- | --- | --- | --- |
@@ -32,9 +33,19 @@ not a compile of it: the typecheck lanes compile all of `src/` together, never o
 
 ## What it takes
 
-Nothing yet: `imports` is empty. Step 9 adds hpcworker's `contract` export, version 1, into
-`test/hpcworker/`: the schemas, the line grammar, the rules and the vectors hpcworker's real writer
-produced, which base's parsers are tested against. It is test data and is in no export. Base takes an
+Four imports, the test data `profile.ts` is read against; each is in no export:
+
+| Import | From | Into | What the tests do with it |
+| --- | --- | --- | --- |
+| `profiles`, version 1 | hpcworker | `test/profiles/` | the composed profiles every client reads |
+| `module-schema`, version 1 | hpcworker | `test/module-schema/` | each key's type, and the rule that composes a profile from its modules |
+| `modules`, version 1 | beethoven-sites | `test/site-modules/` | each real deployment's modules, composed and shown equal to hpcworker's profile byte for byte |
+| `example-modules`, version 1 | beethoven-sites | `test/site-examples/` | the synthetic Example University, composed by the same rule, so every assertion runs once per university |
+
+`test/compose.ts` is the composition rule written again from `module-schema`; it is test code. Step 9
+adds hpcworker's `contract` export, version 1, into `test/hpcworker/`: the schemas, the line grammar,
+the rules and the vectors hpcworker's real writer produced, which base's parsers are tested against.
+It is test data and is in no export. Base takes an
 import only into a folder of its own directly under `test/` (`test/<name>`), so no pull can write over
 the repository's own files; the boundary test and `interface/pull.sh` both refuse any other folder.
 
@@ -94,7 +105,7 @@ names. Its conformance tests then say whether its code still reads what it took.
   names the import's repository, a commit, the export and version the import names, and at least one
   file; and every file named `ORIGIN` in the repository is the record of a declared import, so a copy
   taken by hand and never declared fails too (the standard's rule 3 lists only checks of a declared
-  import). While base takes nothing, the check is proven on a throwaway import, and
+  import). The check is also proven on throwaway imports of the test's own, and
   `interface/pull.sh` is run whole against a stand-in for `gh` that answers from a folder, so the
   `ORIGIN` it writes is shown to be the one the check reads, and each of its refusals is shown to
   leave everything as it was.
