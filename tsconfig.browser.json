@@ -1,0 +1,26 @@
+{
+  // The browser lane: beethoven-extension's options as WXT 0.21.4 generates them (extension/.wxt/
+  // tsconfig.json) with extension/tsconfig.json's own over them: Bundler resolution, module Preserve,
+  // verbatimModuleSyntax, noUncheckedIndexedAccess and the DOM library. One deliberate difference:
+  // "types" is empty where the browser names "node". Run through `npm run typecheck:browser`, which
+  // compiles the files at extension/src/base under a "module" package.json.
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleDetection": "force",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "resolveJsonModule": true,
+    "types": []
+  },
+  "include": ["src/**/*.ts"]
+}

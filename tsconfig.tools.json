@@ -1,0 +1,19 @@
+{
+  // The tools and the tests, the tools checked with their JSDoc types, under the ES2022 library the
+  // desktop and VS Code lanes give the modules.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "strict": true,
+    "allowJs": true,
+    "checkJs": true,
+    "noUnusedLocals": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["tools/**/*.mjs", "test/**/*.ts", "test/**/*.mjs", "vitest.config.ts"]
+}

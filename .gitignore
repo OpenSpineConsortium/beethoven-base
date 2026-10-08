@@ -1,0 +1,12 @@
+node_modules/
+*.log
+.env
+.env.*
+*.pem
+.DS_Store
+Thumbs.db
+# Worktrees Claude Code creates for parallel sessions and isolated subagents.
+.claude/worktrees/
+# The file Claude Code writes on an "always allow" answer: one person's permissions, never shared,
+# and an untracked file would make the pre-push hook refuse every push from that checkout.
+.claude/settings.local.json

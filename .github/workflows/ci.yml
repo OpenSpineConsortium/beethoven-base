@@ -1,0 +1,33 @@
+name: ci
+# beethoven-base's check. No secret: nothing here can reach a grid, claude.ai, any account or another
+# repository, and no step runs Claude Code. The checkout leaves no credential in .git/config, so
+# nothing npm ci or the gate runs can pick up the workflow's token. The job's name is the required
+# check in .github/rulesets/main.json; change it in both places together.
+#
+# gate: `npm run gate`, the same command the pre-push hook runs: the three typecheck lanes (the VS
+# Code lane under TypeScript 5.9.3 and 7.0.2), the tools lane, the posture scan and the export check,
+# and the vitest suites (the boundary test of the interface standard among them) against throwaway
+# folders and git repositories.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run gate

@@ -1,0 +1,9 @@
+{
+ "format": 1,
+ "name": "beethoven-base",
+ "repository": "OpenSpineConsortium/beethoven-base",
+ "summary": "The shared parsers and rules of the three Beethoven editions: pure TypeScript each edition carries byte for byte inside its own source tree and compiles; the modules and their exports arrive with design step 9.",
+ "standard": "https://github.com/OpenSpineConsortium/beethoven/blob/main/INTERFACES.md",
+ "exports": [],
+ "imports": []
+}

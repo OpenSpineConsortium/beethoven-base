@@ -1,0 +1,21 @@
+{
+  // The desktop lane: beethoven-desktop's own compiler options (its tsconfig.json at d014a82), so what
+  // compiles here compiles in its src/base. One deliberate difference: "types" is empty where desktop
+  // names "node", so no host's globals type-check here and base stays ES2022 only. Run through
+  // `npm run typecheck:desktop`, which compiles the files at src/base under a "module" package.json.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "types": [],
+    "lib": ["ES2022"],
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"]
+}

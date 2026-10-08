@@ -1,0 +1,33 @@
+{
+  "name": "beethoven-base",
+  "description": "The shared parsers and rules of the three Beethoven editions, each taken with the edition's own interface/pull.sh as a pinned copy.",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "author": "OpenSpineConsortium",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "typecheck": "node tools/lanes.mjs",
+    "typecheck:desktop": "node tools/lanes.mjs desktop",
+    "typecheck:browser": "node tools/lanes.mjs browser",
+    "typecheck:vscode": "node tools/lanes.mjs vscode",
+    "typecheck:vscode7": "node tools/lanes.mjs vscode --compiler 7",
+    "typecheck:tools": "node node_modules/typescript/bin/tsc -p tsconfig.tools.json",
+    "posture": "node tools/posture.mjs && node tools/exports.mjs",
+    "exports": "node tools/exports.mjs",
+    "test": "vitest run",
+    "gate": "npm run typecheck && npm run typecheck:tools && npm run posture && npm test",
+    "hooks": "node tools/hooks.mjs",
+    "prepare": "node tools/hooks.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "typescript": "5.9.3",
+    "typescript7": "npm:typescript@7.0.2",
+    "vite": "8.3.1",
+    "vitest": "5.0.2"
+  }
+}

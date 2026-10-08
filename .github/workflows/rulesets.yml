@@ -1,0 +1,61 @@
+name: rulesets
+# Rulesets as code (greg, project thread, 2026-10-04 02:11Z): the rule that guards main lives in
+# .github/rulesets/*.json and is applied to GitHub from here, so a change to the rule is a tested
+# commit and the repository's settings never drift from the file. Adapted from the skeleton
+# thread's proposal (project files, github/proposed-rulesets.yml), plus a daily run: a merge that
+# auto-merge makes under the workflow token starts no workflow on main, so a rule file that lands
+# that way is applied by the next daily run (or by hand, with "Run workflow").
+#
+# The repository token cannot administer rulesets, so the apply step uses RULESETS_TOKEN: a
+# fine-grained personal access token the maintainer creates once (Settings, Developer settings,
+# Fine-grained tokens; these repositories only; "Administration: read and write"; with an expiry).
+# It can do more than apply a rule: it can remove the rule guarding main, add a deploy key that
+# pushes, change visibility and collaborators (beethoven-base docs/DESIGN.md, section 5). Today it
+# is an organisation secret every repository can see (greg, 2026-10-04 20:14Z), so any push or
+# same-repository pull_request workflow could read it. This job reaches it through the Environment
+# `rulesets` (deployment branches main only; GitHub creates the environment on the job's first run
+# if nobody has). Only a secret of that environment, with the organisation secret removed, would
+# keep it from every other job: design section 5 recommends that, and nobody has decided it. It is
+# a GitHub credential for settings, not a Claude key or token, and no
+# workflow here runs Claude Code. The token never enters the repository, a job file or an argv: it
+# is read from the secret into the environment of the one step that needs it. Without the secret
+# the job says what is missing and ends green. Environment secrets on a private repository need a
+# paid GitHub plan; which plan this organisation has is not yet measured.
+on:
+  push:
+    branches: [main]
+    paths: [.github/rulesets/*.json]
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: rulesets
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: apply .github/rulesets/*.json to this repository (create or update by name)
+        env:
+          GH_TOKEN: ${{ secrets.RULESETS_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::notice::RULESETS_TOKEN is not set; nothing applied. Create a fine-grained token with Administration: read and write on $REPO, store it as RULESETS_TOKEN (an organisation secret this repository can see, or a secret of its Environment rulesets, deployment branches main only), then run this workflow."
+            exit 0
+          fi
+          existing=$(gh api "repos/$REPO/rulesets?per_page=100")
+          for f in .github/rulesets/*.json; do
+            name=$(jq -r '.name' "$f")
+            id=$(jq -r --arg n "$name" '.[] | select(.name == $n) | .id' <<<"$existing" | head -n 1)
+            if [ -n "$id" ]; then
+              gh api -X PUT "repos/$REPO/rulesets/$id" --input "$f" --jq '"updated \(.id) \(.name) (\(.enforcement))"'
+            else
+              gh api -X POST "repos/$REPO/rulesets" --input "$f" --jq '"created \(.id) \(.name) (\(.enforcement))"'
+            fi
+          done
