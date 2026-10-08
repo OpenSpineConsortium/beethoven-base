@@ -1,0 +1,5 @@
+repository OpenSpineConsortium/beethoven-sites
+commit 83f34e8344dee84881f51b9294661b00b8a46f5b
+export example-modules 1
+sha256 f9456612efcdfb42fd39beab52547535e8eb5b1736d5cf6555282173578db906 example/labs/demo.json
+sha256 f418be007abfd323abb8c3e8f079be9d0e1735516189945da72b08cf98944f37 example/site.json

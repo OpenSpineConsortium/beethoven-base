@@ -1,10 +1,9 @@
 // What this repository offers and takes, read from interface/INTERFACE.json, and the check that an
 // import's folder is the pinned copy its ORIGIN records (the interface standard's rule 3). The boundary
-// test runs it on every import, and on throwaway imports of its own while base takes none, so the check
-// is shown to refuse before the first real import depends on it. Ported from beethoven-desktop's
-// test/origin.ts, without its fetched-program form (base takes no program export), and with three
-// refusals desktop's lacks: a link on the way to or inside the folder, an ORIGIN that lists no file,
-// and an ORIGIN no import declares.
+// test runs it on every import, and on throwaway imports of its own, so the check is shown to refuse.
+// Ported from beethoven-desktop's test/origin.ts, without its fetched-program form (base takes no
+// program export), and with three refusals desktop's lacks: a link on the way to or inside the folder,
+// an ORIGIN that lists no file, and an ORIGIN no import declares.
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
