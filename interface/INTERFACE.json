@@ -58,6 +58,20 @@
    "version": 1,
    "into": "test/site-examples",
    "origin": "test/site-examples/ORIGIN"
+  },
+  {
+   "repository": "OpenSpineConsortium/hpcworker",
+   "export": "contract",
+   "version": 1,
+   "into": "test/hpcworker",
+   "origin": "test/hpcworker/ORIGIN"
+  },
+  {
+   "repository": "OpenSpineConsortium/beethoven-agents",
+   "export": "registry",
+   "version": 1,
+   "into": "test/registry",
+   "origin": "test/registry/ORIGIN"
   }
  ]
 }
