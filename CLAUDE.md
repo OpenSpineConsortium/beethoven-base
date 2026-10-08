@@ -73,10 +73,11 @@ OnDemand" is the mark of its publisher.
   - This repository's CI holds none. `interface/pull.sh` uses the person's own `gh` sign-in and never
     names or reads a token variable.
   - The GitHub credentials that beethoven-base's protected environments may hold are for code only,
-    and none of them is a Claude key or token. They are `RULESETS_TOKEN` in the Environment
-    `rulesets`, for `rulesets.yml`; `BASE_REPORT_TOKEN`, read-only, in `report` for the lag report,
-    at step 14; and no propagate token, under D8. Each environment's deployment branches are main only
-    (design section 5).
+    and none of them is a Claude key or token. They are `RULESETS_TOKEN`, for `rulesets.yml`, read
+    through the Environment `rulesets` (today the organisation secret every repository can see;
+    design section 5 recommends a secret of that environment instead); `BASE_REPORT_TOKEN`,
+    read-only, in `report` for the lag report, at step 14; and no propagate token, under D8. Each
+    environment's deployment branches are main only (design section 5).
   - No workflow anywhere runs Claude Code.
 - **Secrets never appear on a command line, in argv, in logs, in job files or in `sbatch --export`.**
   Never echo one. A workflow reads a secret into the environment of the one step that needs it (as
@@ -259,8 +260,11 @@ bash interface/pull.sh --all # every import (none yet), through your own gh sign
 - **Pull requests are opened ready for review, never as drafts.** `automerge.yml` arms GitHub's
   auto-merge on each one, but only once `main` carries a required-checks rule; armed without one, it
   would merge before the tests. From then on, the required checks alone decide.
-  - The rule is `.github/rulesets/main.json`, applied by `rulesets.yml` with `RULESETS_TOKEN` from
-    the Environment `rulesets` (deployment branches main only).
+  - The rule is `.github/rulesets/main.json`, applied by `rulesets.yml` with `RULESETS_TOKEN`, read
+    through the Environment `rulesets`. The token is the organisation secret, so nobody pastes it
+    again for this repository. GitHub creates the environment on the job's first run if nobody has;
+    limiting its deployment branches to main is a setting of its own, and does not keep an
+    organisation secret from other jobs.
   - Until that rule is applied, a pull request is merged by hand.
   - Environment secrets on a private repository depend on the organisation's GitHub plan, which is
     not yet measured.

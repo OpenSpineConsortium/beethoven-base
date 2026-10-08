@@ -10,11 +10,13 @@ name: rulesets
 # fine-grained personal access token the maintainer creates once (Settings, Developer settings,
 # Fine-grained tokens; these repositories only; "Administration: read and write"; with an expiry).
 # It can do more than apply a rule: it can remove the rule guarding main, add a deploy key that
-# pushes, change visibility and collaborators (beethoven-base docs/DESIGN.md, section 5). So it is
-# kept out of reach of every other job: it is the secret of this repository's Environment
-# `rulesets`, whose deployment branches are main only, and only this job names that environment
-# (an organisation secret would be readable by any push or same-repository pull_request workflow of
-# any repository). It is a GitHub credential for settings, not a Claude key or token, and no
+# pushes, change visibility and collaborators (beethoven-base docs/DESIGN.md, section 5). Today it
+# is an organisation secret every repository can see (greg, 2026-10-04 20:14Z), so any push or
+# same-repository pull_request workflow could read it. This job reaches it through the Environment
+# `rulesets` (deployment branches main only; GitHub creates the environment on the job's first run
+# if nobody has). Only a secret of that environment, with the organisation secret removed, would
+# keep it from every other job: design section 5 recommends that, and nobody has decided it. It is
+# a GitHub credential for settings, not a Claude key or token, and no
 # workflow here runs Claude Code. The token never enters the repository, a job file or an argv: it
 # is read from the secret into the environment of the one step that needs it. Without the secret
 # the job says what is missing and ends green. Environment secrets on a private repository need a
@@ -44,7 +46,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${GH_TOKEN:-}" ]; then
-            echo "::notice::RULESETS_TOKEN is not set; nothing applied. Create a fine-grained token with Administration: read and write on $REPO, store it as the RULESETS_TOKEN secret of the Environment rulesets (deployment branches: main only), then run this workflow."
+            echo "::notice::RULESETS_TOKEN is not set; nothing applied. Create a fine-grained token with Administration: read and write on $REPO, store it as RULESETS_TOKEN (an organisation secret this repository can see, or a secret of its Environment rulesets, deployment branches main only), then run this workflow."
             exit 0
           fi
           existing=$(gh api "repos/$REPO/rulesets?per_page=100")
