@@ -64,6 +64,13 @@ describe('posture', () => {
     ['a node: module', "import { readFileSync } from 'node:fs';\nexport const R = readFileSync;\n", 'imports node:fs', 1],
     ['a package', "import x from 'lodash';\nexport const X = x;\n", 'imports lodash', 1],
     ['a file outside the folder', "export { A } from '../outside.js';\n", 'imports ../outside.js', 1],
+    ['a module without its .js', "import { OTHER } from './other';\nexport const A = OTHER;\n", 'imports ./other (', 1],
+    ['a module by its .ts', "import { OTHER } from './other.ts';\nexport const A = OTHER;\n", 'imports ./other.ts (', 1],
+    ['a triple-slash reference path', '/// <reference path="./other.ts" />\nexport const A = 1;\n', 'a triple-slash directive', 1],
+    ['a triple-slash reference to types', '/// <reference types="node" />\nexport const A = 1;\n', 'a triple-slash directive', 1],
+    // a directive counts only above the first statement, after any other comments
+    ['a triple-slash reference to a library', '// a module\n/// <reference lib="dom" />\nexport const A = 1;\n', 'a triple-slash directive', 2],
+    ['a triple-slash no-default-lib', '/// <reference no-default-lib="true"/>\nexport const A = 1;\n', 'a triple-slash directive', 1],
     ['require', "export function load(): unknown {\n  return require('x');\n}\n", 'a Node platform call', 2],
     ['import x = require', "import fs = require('fs');\nexport const F = fs;\n", 'an `import x =`', 1],
     ['a dynamic import()', "export function load(): unknown {\n  return import('./other.js');\n}\n", 'a dynamic import()', 2],

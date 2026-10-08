@@ -33,14 +33,6 @@
           {
             "context": "gate",
             "integration_id": 15368
-          },
-          {
-            "context": "check.mjs on Node 18 (ubuntu-latest)",
-            "integration_id": 15368
-          },
-          {
-            "context": "check.mjs on Node 18 (windows-latest)",
-            "integration_id": 15368
           }
         ]
       }

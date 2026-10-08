@@ -1,9 +1,10 @@
 # Line endings: everything text is LF in the repository and in the working tree, on every platform.
-# The pinned hpcworker texts under test/hpcworker are checked byte for byte against their ORIGIN, and
-# the pre-push hook is a shell script; a Windows checkout with core.autocrlf=true would turn the one
-# into a failed check and the other into a hook sh cannot run. (What an edition takes is read from
-# the release's git objects, never from this working tree.)
+# An import's files are checked byte for byte against their ORIGIN, and the pre-push hook and
+# interface/pull.sh are shell scripts; a Windows checkout with core.autocrlf=true would turn the one
+# into a failed check and the others into scripts bash cannot run. (What an edition takes is fetched
+# from GitHub at a merged commit, never from this working tree.)
 * text=auto eol=lf
+*.sh text eol=lf
 *.ts text eol=lf
 *.mjs text eol=lf
 *.js text eol=lf

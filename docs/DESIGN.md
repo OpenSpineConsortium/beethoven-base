@@ -27,29 +27,48 @@ as at b7b8650.
 A prototype of the modules was built in scratch from the code named in section 2, to measure the
 posture checks and the compilers. It is not kept and is not the code for pull request #2.
 
+**Rebuilt to the interface standard, 2026-10-08.** greg's order of 2026-10-07 11:35Z,
+"encapsulating each repo so that it is independent and not directly accessing any code of another
+repo in the Beethoven ecosystem. Make sure it obeys the standard API-type interfacing.", produced the
+ecosystem's interface standard, version 1 (`INTERFACES.md` in the hub,
+`OpenSpineConsortium/beethoven`). The skeleton as first built broke three of its rules:
+`tools/pull-hpcworker.mjs` read an hpcworker checkout, `tools/vendor.mjs` wrote into an edition's
+checkout, and each edition would have run base's `vendor/check.mjs` (rule 1); what each edition took
+was in `editions/*.json`, not in `interface/INTERFACE.json` (rule 2); and an edition would have taken
+base through base's own command at a release tag, not with its own `interface/pull.sh` at a merged
+commit (rule 3). Those parts are gone. Sections 1, 3, 4, 5, 10, 13 and 14 describe the rebuilt
+design, section 6.1 the contract as hpcworker now publishes it and section 6.4 the credential list it
+carries; section 12, greg's decision record, is unchanged; the other sections are as written on
+2026-10-04 except where they named the removed parts or what each edition takes (section 2's lead-in
+and its site-profiles bullet).
+
 ## 1. The decision
 
 - beethoven-base is a small TypeScript library of 13 modules, about 550 lines. Each module has two
   or more real consumers today, or is a rule every edition must apply the same way.
 - It holds no UI, no sentence a student reads, no platform call, no I/O, no hashing and no import
   beyond its own files.
-- Each edition takes only the modules on its own list, as a pinned copy inside its source root,
-  checked with no secret against an `ORIGIN` record: the beethoven-qa model, with a downgrade
-  refusal added. Like beethoven-qa's, the vendor tool never deletes.
+- Base offers one export per edition in `interface/INTERFACE.json` (`desktop`, `browser` and
+  `vscode`, kind `files`, from step 9), each listing the modules that edition takes. Each edition
+  takes its export as a pinned copy inside its source root, with its own `interface/pull.sh`, from
+  GitHub at a commit base's `main` contains, and checks it with no secret against an `ORIGIN` record
+  in its own boundary test (the interface standard, rule 3). No tool of base's runs in an edition,
+  and the puller never deletes.
 - No edition holds a secret for base. The only secret an edition holds is `RULESETS_TOKEN`, for
   `rulesets.yml` only, as desktop does today. beethoven-base may hold two GitHub credentials for
   code, each in a protected environment. Neither is a Claude key, and no workflow anywhere runs
   Claude Code.
-- hpcworker stays canonical for everything it writes, and gains machine-readable vectors from its
-  real writer, with a test that fails on drift.
+- hpcworker stays canonical for everything it writes, and publishes it as its `contract` export:
+  machine-readable schemas, rules and vectors from its real writer, with a test that fails on drift
+  (section 6.1).
 - The VS Code edition moves onto hpcworker for its Remote Control worker. The `claude -p` queue does
   not go into hpcworker; where it goes is decision D1.
 - A safety step comes first and does not wait for base: grid scripts 9, before VS Code 5.0.0 is built.
 
 ## 2. Contents
 
-Each row is one module in base `src/`; "yes" means that edition takes it. Lines are at the refs above;
-VS Code's are at aa44696.
+Each row is one module in base `src/`; "yes" means that edition's export lists it (section 4). Lines
+are at the refs above; VS Code's are at aa44696.
 
 | Module | Holds | Comes from | Desktop | Browser | VS Code now | VS Code at 7.0.0 |
 |---|---|---|---|---|---|---|
@@ -89,11 +108,12 @@ VS Code's are at aa44696.
   needs one at its move.
 - **Sentences a student reads** (WORDS, steps.ts, describeSteps): each edition's. Base holds only
   meaning.ts.
-- **Site profiles (JSON)**: they stay where they are, pulled by each edition's pull.sh; both copies
-  of wayne.json equal hpcworker's today (diff). Under `src/base` they would fail the browser's
-  old-name test, which walks `src/**/*.json` (hygiene.test.ts:33): wayne.json:56 has
-  `.ashley-remote-consent`, and its notes (:88) say "shared/ashley and". Re-run here with the test's
-  own `KEPT` rule: both lines are findings.
+- **Site profiles (JSON)**: they stay where they are, taken from hpcworker's `profiles` export by
+  desktop's and the browser's own `interface/pull.sh` (VS Code holds none before 7.0.0 and adopts the
+  standard at step 13); both copies of wayne.json equal hpcworker's today (diff). Under `src/base`
+  they would fail the browser's old-name test, which walks `src/**/*.json` (hygiene.test.ts:33):
+  wayne.json:56 has `.ashley-remote-consent`, and its notes (:88) say "shared/ashley and". Re-run
+  here with the test's own `KEPT` rule: both lines are findings.
 
 **Real size, checked** against the line ranges above. Before VS Code moves, base replaces about 550
 duplicated lines: desktop about 350 (all 203 of contract.ts, all 38 of redact.ts, profile.ts:44-79
@@ -123,11 +143,14 @@ scale, the client code is 37,141 lines: browser src 25,046, VS Code src and grid
 - **VS Code.** Its lane is Node16 CommonJS. The list passed under TypeScript 7.0.2, which VS Code's
   main now pins, and under 5.9.3; esbuild bundled it, and the bundle ran.
 
-**Where the vendor tool lives:** `vendor/beethoven-base/check.mjs` at each edition's repository
-root, beside `ORIGIN`. Nothing scans that folder: desktop scans `src` and `dist/beethoven/server`
-(forbidden.mjs:9; scripts/build.mjs:43); the browser's hygiene test walks src, test, mock-ood and
-store-assets/src (hygiene.test.ts:33, 104, 117-126); VS Code has no source scan, and its
-tools/release_check.mjs reads only the built .vsix.
+**Where the record lives.** Under the standard no tool of base's goes into an edition, only the
+modules, and the copy's `ORIGIN` sits inside the copy's folder, beside them (`src/base/ORIGIN` in
+desktop, `extension/src/base/ORIGIN` in the browser and VS Code). Those folders are scanned:
+desktop's forbidden.mjs walks `src` but reads only `.js`, `.cjs`, `.mjs` and `.ts` files (desktop
+main 9ce98bb), so it passes over `ORIGIN`; the browser's hygiene test walks src, test, mock-ood and
+store-assets/src (hygiene.test.ts:33, 104, 117-126, read at the refs above); VS Code has no source
+scan, and its tools/release_check.mjs reads only the built .vsix. Whether the browser's walk and
+each bundler pass over a file named `ORIGIN` is not yet measured.
 
 **Hashing rule: base does no hashing.** It imports nothing, neither node:crypto nor WebCrypto. VS
 Code's `sha256` (terms.ts:120) and desktop's `fingerprintOf` (ssh.ts:243) stay synchronous in their
@@ -141,54 +164,106 @@ kept top-level `Object.freeze([...])`, `[...].map(...)` and `[...].join(...)`, a
 three when marked `/*#__PURE__*/`. Re-measured here with the same Vite: a local function returning a
 constant, an array or an object was dropped, but a call whose body builds a string from its argument
 or a `new RegExp` of it was kept, minified or not. So in base a top-level value is a literal or a
-pure-marked call, and base's posture scan enforces it. The per-edition lists keep other editions'
+pure-marked call, and base's posture scan enforces it. The per-edition exports keep other editions'
 modules, such as sshopts.ts, out of the browser's copy altogether. The browser's package test gains
 a scan of the built bundle for every strip-list name and `apiKeyHelper`; it has none today.
 
 ## 4. How editions take base
 
-**Layout.** Desktop takes the modules into `src/base/`, the browser and VS Code into
-`extension/src/base/`. `vendor/beethoven-base/ORIGIN` and `check.mjs` sit at each repository root.
-The copy has no package.json, so VS Code's CommonJS is untouched. Each edition's list is
-`editions/<name>.json` in base; a module's relative imports travel with it.
+**The interface standard governs** (`INTERFACES.md` in the hub, version 1). Base declares what it
+offers in `interface/INTERFACE.json`; an edition takes it only as a pinned, checked copy, with its own
+puller; neither repository reads the other's checkout or runs the other's code.
 
-**`ORIGIN`** keeps beethoven-qa's five fields (repository, ref, commit, tree_sha256, files; research
-`vendor/beethoven-qa/ORIGIN`), adds an `edition:` line and one `file: <path> <sha256>` line per file.
+**Exports.** From step 9 base's `interface/INTERFACE.json` lists three exports, one per edition:
+`desktop`, `browser` and `vscode`. Each is kind `files`: TypeScript source the edition carries byte
+for byte inside its own source tree and compiles. The standard has no TypeScript kind, and `files` is
+the existing one that says what happens to them. Each export's `paths` list the modules it takes under
+`src/`, one per module, as the section 2 table says, and each has an integer `version`. A module's
+relative imports must be in the same export: `tools/exports.mjs`, run in the gate, fails an export
+that leaves one out, naming the file and the import; an export path that matches no tracked file; and
+an edition's export path outside `src/`. The posture scan allows a module no other way to name a file
+(only `./<name>.js`, no triple-slash directive). That checks what an export holds, not that it
+compiles alone: the typecheck lanes compile all of `src/` together under each edition's options.
+Until step 9 `exports` is `[]`, because the skeleton has no module.
 
-**`node tools/vendor.mjs vendor --into <edition>`** runs from a clean base checkout at a v* tag and
-reads from the tag's own objects. It writes the edition's modules and `check.mjs`, staying inside
-the copy and never following a link. It never deletes, as beethoven-qa's vendor never does: a file
-the previous `ORIGIN` listed that the new release lacks is printed with the `git rm` line for you to
-run in the reviewed pull request, and `check.mjs` fails until it is gone, so tsc never keeps
-compiling a module base dropped. It refuses a dirty tree, a file added by hand, and a release older
-than the one in the edition's `origin/main:vendor/beethoven-base/ORIGIN`.
+**Layout in the edition.** Desktop takes its export into `src/base/`, the browser and VS Code into
+`extension/src/base/`. Each module lands at its path below `src/` (`src/links.ts` at
+`src/base/links.ts`), with the copy's `ORIGIN` beside them; the puller places each file below the
+folder all of the export's paths share, and the export check keeps an edition's paths under `src/`.
+The copy has no package.json, so VS Code's CommonJS is untouched.
 
-**`check.mjs`** runs in each edition's CI and pre-push, with no secret. It fails when a file differs
-from `ORIGIN`, when the copy holds a file `ORIGIN` does not list, or when `ORIGIN`'s ref is older
-than the one on the pull request's base branch (read with `git show
-origin/<base>:vendor/beethoven-base/ORIGIN`, so CI fetches with depth 0); the last catches a rebase
-that took the older side. `check --source` runs from base's own checkout and rebuilds the digest
-from the named commit, closing the self-check gap as beethoven-qa does.
+**The pull.** The edition runs its own `interface/pull.sh` (its own puller: the standard's rule 3 says
+what a puller must do, not its text, and desktop's and the browser's differ; VS Code has none until
+step 13) through the person's own `gh` sign-in. It takes only a commit base's default branch
+contains (a merged change, never a pull request's branch), reads base's `INTERFACE.json` at that
+commit, refuses an export or a version base does not offer there, fetches only the files the export
+lists, fetches every file before it places any, and writes `ORIGIN`:
 
-**The beethoven-qa precedent, measured.** beethoven-research origin/main (8dd5be2) carries
-`vendor/beethoven-qa/` with an `ORIGIN` of v1.0.0, commit 16415b4, 22 files, and runs `vendor-check`
-in its gate (pixi.toml:68-69) and CI (ci.yml:38). Critique 1 read b7b8650, from before that landed
-at 16:39Z. beethoven-qa's vendor never deletes (vendor.py, module docstring), and base's does not
-either: the rule is that nothing of ours deletes outside its own run directories, and `check.mjs`
-already fails on a file `ORIGIN` does not list.
+```
+repository OpenSpineConsortium/beethoven-base
+commit <40 hex>
+export desktop 1
+sha256 <64 hex> links.ts
+```
 
-**Lag.** Base's `report.yml` runs daily on main, reads each edition's main `ORIGIN`, and fails when
-an edition is more than one release or more than 7 days behind base's newest tag. It needs a
-read-only token (section 5); without one, the same report runs from a session's own sign-in. Each
-edition also shows its base version in its lab-lead diagnostics.
+It never deletes. A module the new copy lacks is listed for a person to remove in the reviewed pull
+request, and the edition's boundary test fails until it is gone, so tsc never keeps compiling a
+module base dropped. Base's own `interface/pull.sh` is desktop's, ported by hand, with refusals
+desktop's lacks (an import folder outside `test/<name>`, a link on the way to a file it would write,
+a `.part` name in the export or already in the folder); it serves base's own import from step 9.
 
-**Propagation.** By default a session runs `node tools/vendor.mjs propagate` with its own sign-in,
-which opens one pull request per edition. A workflow does it only if you choose D8.
+**The check.** The edition's own boundary test, in its own test run, with no secret and no network,
+fails when a file differs from `ORIGIN`, when the folder holds a file `ORIGIN` does not list, and
+when `ORIGIN`'s export or version is not the one the import names. The edition's conformance tests
+then say whether its code still reads the copy.
+
+**Versions, not tags.** What an edition acts on is its export's integer `version` and the commit in
+its `ORIGIN`. A change an edition must act on (a name removed, renamed or retyped, a code whose
+meaning changes) raises the export's version in the same pull request as the code; an additive one
+keeps it. There are no release tags.
+
+**What the earlier design had that the standard does not give**, recorded as risks in section 13:
+
+- the refusal of an `ORIGIN` older than the one on the pull request's base branch, which caught a
+  rebase that took the older side;
+- `check --source`, which rebuilt the copy from base's own checkout, so that an edited copy with a
+  rewritten `ORIGIN` was caught. The standard defines no audit for it. Desktop's
+  `bash interface/pull.sh --pinned src/base` (base's port has the same) takes again what `ORIGIN`
+  names and refuses if it differs. The browser's puller has no such form: its `--at-origin` writes
+  the files and `ORIGIN` again without comparing, so only `git diff` afterwards shows the edit. VS
+  Code has no puller until step 13. A person runs each with their own sign-in, and no CI can;
+- the refusal of a link anywhere in the copy's path. Desktop's and the browser's pullers create
+  folders, redirect and move through a link (read at 9ce98bb and ae11a00, not run here), so a link in
+  the edition's copy folder takes a pull outside the edition's repository; base's own puller refuses
+  one before it writes;
+- the refusal of a file whose change neither `ORIGIN` nor the edition's `HEAD` held. Every puller,
+  base's own included, writes over a copied file that was edited and not committed, without a word.
+
+**The beethoven-qa precedent.** beethoven-qa keeps its own pinned-copy command and record under the
+standard (the standard's rule 3 names that exception). Base does not, so that desktop and the browser
+take base the way they already take hpcworker's exports, with their own `interface/pull.sh`, and VS
+Code, which adopts the standard at step 13, takes it the same way.
+
+**Lag.** From step 14 a report on base's main reads, through GitHub's API and never a checkout, each
+edition's `interface/INTERFACE.json` on its main, the manifest the standard makes machine-readable,
+and nothing else of the edition: the copy's `ORIGIN` is in no edition's exports, so it is private to
+the edition (the standard's rules 2 and 4). The report fails when an edition's import of base names an
+export version older than the one base offers. It cannot see how far behind base's main a copy is
+within one version, since only `ORIGIN` holds the commit. It needs a read-only token (section 5);
+without one, the same report runs from a session's own sign-in. Each edition also shows the export
+version and commit of its copy in its own lab-lead diagnostics.
+
+**Propagation.** After a merge that changes an export, a session runs each edition's
+`interface/pull.sh` in that edition's own checkout, with its own sign-in, and opens one pull request
+per edition (the standard's "How a provider changes an export", step 3). Base's workflows read, run
+and check out no edition's code; automated propagation, if you ever choose it under D8, runs in each
+edition (section 5).
 
 ## 5. Credentials
 
 **No edition holds a secret for base.** The copy is checked with no credential. Nothing fetches base
-at build time, in a store package or in your Mac release script. The one secret an edition holds is
+at build time, in a store package or in your Mac release script: a person takes a new copy with the
+edition's `interface/pull.sh` and their own `gh` sign-in. The one secret an edition holds is
 `RULESETS_TOKEN`, for `rulesets.yml` only (desktop CLAUDE.md:101), below.
 
 **`RULESETS_TOKEN`, what it can actually do.** Administration read and write on a fine-grained
@@ -204,60 +279,66 @@ applies rulesets, create an Environment `rulesets` with deployment branches `mai
 the token there; give `rulesets.yml`'s job `environment: rulesets`; limit the token to those
 repositories and give it an expiry.
 
-**`BASE_REPORT_TOKEN`**, read-only, for `report.yml`: fine-grained, Contents read on the three
+**`BASE_REPORT_TOKEN`**, read-only, for the lag report: fine-grained, Contents read on the three
 editions and nothing else, with an expiry, stored only in beethoven-base in an Environment `report`
-with deployment branches `main` only.
+with deployment branches `main` only. A token cannot be limited to one file: the permission reaches
+each edition's code, and only the report's own code keeps it to `interface/INTERFACE.json`.
 
-**`BASE_PROPAGATE_TOKEN`** is optional (D8), and the recommendation is not to make it now. If made:
-fine-grained, resource owner OpenSpineConsortium, the three editions only; Contents and Pull
-requests read and write, no Workflows, no Administration; an expiry of a year at most; stored only
-in beethoven-base in an Environment `propagate` whose deployment rule allows only `v*` tags, with
-you as required reviewer. The job runs only on a published release, never on
-`pull_request_target`; it checks out base without persisted credentials and the edition with the
-token for the push step only; it runs base's own Node script, never the edition's `npm ci` or
-scripts; and it hands `gh pr create` the token through `GH_TOKEN` in the environment, never argv.
+**`BASE_PROPAGATE_TOKEN`** is optional (D8), and the decision is not to make it now. Its first design
+ran a job in base on a published `v*` release that checked out each edition and ran base's own Node
+script there. Under the standard neither holds: there are no release tags, and a workflow that checks
+out another repository, or fetches and runs another repository's script, breaks rule 1. A puller
+also needs its own repository's checkout: it reads that repository's `interface/INTERFACE.json` and
+writes into its folders. So if D8 ever changes, propagation runs in each edition: a workflow of the
+edition's own that runs its own `interface/pull.sh` in its own checkout and opens the pull request
+there. Base's workflows read, run and check out no edition's code. Where that credential lives and
+what it may do (reading base's export from the edition, how the edition's workflow is started) is
+designed again then; nothing of it is in base.
 
 Two caveats. GitHub documents required reviewers on private repositories as Enterprise-only; this
-organisation's plan is not checked. Without required reviewers, the gate is the `v*` tag rule plus
-a tag ruleset in base letting only organisation admins create `v*` (you already push tags by hand).
-On GitHub Free, private repositories have no environment secrets or deployment branches at all
-(Pro, Team or Enterprise), so every environment in this section depends on the plan. And as your
-token it carries your OrganizationAdmin bypass (desktop `.github/rulesets/main.json:5-9`,
-`bypass_mode: always`), so it could push to main past the checks; only the environment and the
-workflow's own code, which pushes only `base/v<N>`, stop that. A GitHub App would not be on the
-bypass list.
+organisation's plan is not checked. On GitHub Free, private repositories have no environment secrets
+or deployment branches at all (Pro, Team or Enterprise), so every environment in this section depends
+on the plan. And as your token it would carry your OrganizationAdmin bypass (desktop
+`.github/rulesets/main.json:5-9`, `bypass_mode: always`), so it could push to an edition's main past
+the checks; only the environment and the workflow's own code would stop that. A GitHub App would not
+be on the bypass list.
 
-**hpcworker holds nothing.** Base takes hpcworker's texts and vectors with `node
-tools/pull-hpcworker.mjs`, run from a session's own gh sign-in. No hpcworker workflow writes to base.
+**hpcworker holds nothing.** From step 9 base takes hpcworker's `contract` export with its own
+`interface/pull.sh`, run with a person's own gh sign-in. No hpcworker workflow writes to base.
 
 **CLAUDE.md lines to change**, each by the section 10 pull request that makes it true:
 
 | File:line | Change |
 |---|---|
 | hpcworker CLAUDE.md:58 and beethoven-extension CLAUDE.md:58 ("no CI on a key or (a) token held as a secret") | Add: "(a Claude key or token; the GitHub credentials beethoven-base's protected environments hold, for code only, are not that, and no workflow runs Claude Code)". Desktop :31 and VS Code :36 (main) already say "that runs Claude Code". |
-| hpcworker CLAUDE.md:298-303 | Add: the suite writes `docs/contract/vectors/` from the real writer; beethoven-base holds the one client implementation of the shared parsers; the profiles stay canonical here. |
+| hpcworker CLAUDE.md:298-303 | Add: the `contract` export carries vectors from the real writer; beethoven-base holds the one client implementation of the shared parsers; the profiles stay canonical here. |
 | hpcworker CLAUDE.md:305 ("three lanes, none holding a secret") | No change: nothing in hpcworker holds one. |
 | hpcworker CLAUDE.md:178-179 ("never called outdated by it") | No change under D6's recommendation. |
 | beethoven-extension CLAUDE.md:329-334 | contract.ts keeps the browser's own lines; the shared parsers come from `extension/src/base`. |
-| beethoven-extension CLAUDE.md:339 ("No secrets exist…") | Add: the base copy is checked by `vendor-check`, which needs none. At step 12 (the kit) the line also names `RULESETS_TOKEN`, held in the `rulesets` environment for `rulesets.yml` only. |
+| beethoven-extension CLAUDE.md:339 ("No secrets exist…") | Add: the base copy is checked by the extension's boundary test, which needs none. At step 12 (the kit) the line also names `RULESETS_TOKEN`, held in the `rulesets` environment for `rulesets.yml` only. |
 | beethoven-desktop CLAUDE.md:42-43 ("only imports are Node's own modules") | Add: "and the pinned copy of beethoven-base in src/base, compiled with it, which imports nothing". |
-| beethoven-desktop CLAUDE.md:89, :101 | Add `vendor-check` to CI. `RULESETS_TOKEN` becomes the `rulesets` environment's secret, main only. |
+| beethoven-desktop CLAUDE.md:89, :101 | Add: the base copy is checked by the boundary test, in CI. `RULESETS_TOKEN` becomes the `rulesets` environment's secret, main only. |
 | beethoven-vscode CLAUDE.md:61, :81-86 (main; :65, :85-90 on aa44696) | The kit and pull requests at 6.0.0; the Grid section at 7.0.0. |
-| beethoven-base CLAUDE.md (new) | Restates the non-negotiables with the clause above, the direction (hpcworker to base to editions) and the source rules of section 3. |
+| beethoven-base CLAUDE.md (new) | Restates the non-negotiables with the clause above, the direction (hpcworker to base to editions), the interface standard and the source rules of section 3. |
 
 ## 6. Contract home
 
 ### 6.1 Canonical texts and vectors
 
 hpcworker stays canonical for what it writes: V11_CONTRACT.md, V12_CONTRACT.md, the writer and the
-profiles. It adds `docs/contract/vectors/`, written by a Python 3.6 generator in its suite from the
-real writer: every `HPCW-STEP` line (including `signed-in - -`); status.json and connection.json for
-R1 to R13 (including an online state with only `session_url`); the gate's answers and exit codes;
-the `CLEAN_ENV` list; and the `claude auth status` cases of test_adapters.py:152-182 with their
-verdicts. A unittest regenerates them and fails on any difference. Base's tests parse every vector,
-pinned in base's `test/hpcworker/` with an `ORIGIN`; that pin is test data and never reaches an
-edition. The vectors live in docs/, which deploy_shared.sh does not publish, so adding them changes
-no framework version.
+profiles. Since the interface standard it publishes them as exports (read at hpcworker main 3b22e70):
+`contract`, version 1, which is `interface/contract/` (`cli.json`, `lines.json`, `rules.json`, the
+JSON Schemas of status.json, connection.json and the worker's status, and `vectors/`, written from the
+real writer by `framework/tests/vectors.py`, with `framework/tests/test_interface.py` failing on any
+difference); `contract-text`, the two texts; and `profiles`. This section first asked for vectors of
+every `HPCW-STEP` line (including `signed-in - -`), of status.json and connection.json for R1 to R13
+(including an online state with only `session_url`), of the gate's answers and exit codes, of the
+`CLEAN_ENV` list and of the `claude auth status` cases of test_adapters.py:152-182 with their
+verdicts; whether the export covers each of them is not re-checked here, and step 9 checks it before
+the parsers rely on it. From step 9 base's tests parse every vector of the `contract` export, taken
+into `test/hpcworker/` with base's own `interface/pull.sh`; that copy is test data and is in no
+export. The export lives under `interface/`, outside the `framework/` that deploy_shared.sh publishes,
+so changing it changes no framework version.
 
 ### 6.2 Versions
 
@@ -292,7 +373,10 @@ hpcworker lacks, such as `ANTHROPIC_FOUNDRY_API_KEY`, `AWS_BEARER_TOKEN_BEDROCK`
 `ANTHROPIC_BEDROCK_BASE_URL`, and lacks 6 that hpcworker has, such as `CLAUDE_CODE_USE_GATEWAY`.
 The one exact list is the union, 33 names (recomputed here from the two lists).
 hpcworker adopts it first, as a framework bump; base's strip.ts is then that list, one name per
-line. Desktop's all-secrets net (ssh.ts:156) stays in desktop. VS Code exports `GITHUB_TOKEN`,
+line. hpcworker's `contract` export carries its list (`rules.json`, `credential_variables`), and the
+standard's rule 4 asks a consumer to test a list it types by hand equal to the export, which is one
+more reason hpcworker adopts the union first.
+Desktop's all-secrets net (ssh.ts:156) stays in desktop. VS Code exports `GITHUB_TOKEN`,
 `GH_TOKEN` and `HF_TOKEN` on purpose (services.ts:49-75), and a token-shaped net would strip them.
 
 ### 6.5 FRAMEWORK_MIN and link order
@@ -428,15 +512,15 @@ Each step is one pull request. **Hand** marks what you do yourself.
 | 3 | beethoven-vscode | `beethoven.account` (aa44696, with the 22 findings from the staging patch), rebased on main (cc76efd). aa44696 typechecks under TS 7.0.2 with its own dependencies (exit 0, measured here); rebased onto main's `@types/node` 26.6.3 it is not yet measured. | Merge. |
 | 4 | beethoven-vscode | Grid scripts 9 (section 8, items 1 to 6). | Merge. Build and publish 5.0.0. |
 | 5 | beethoven-vscode | `admin.mjs roster`, if your laptop's checkout lacks it. | Re-approve grid-only students. Run grid_access.sh `--dry-run`. |
-| 6 | beethoven-base | PR #1, the skeleton: CLAUDE.md; package.json with dev dependencies only (typescript 5.9.3, typescript 7.0.2 through an npm alias, vitest 5.0.2); three typecheck lanes (Bundler with DOM; NodeNext; Node16 CommonJS); tools/vendor.mjs, posture.mjs and pull-hpcworker.mjs; ci.yml; the kit (pre-push, automerge.yml, rulesets.yml, `.github/rulesets/main.json`). | Tick Allow auto-merge. Create the `rulesets` environment. Merge by hand. |
-| 7 | hpcworker | The vectors and their drift test. The V11:722 and R5 text fix. The CLAUDE.md :58 and :298-303 lines. No framework change. | Merge. |
+| 6 | beethoven-base | PR #1, the skeleton, rebuilt to the interface standard on 2026-10-08: CLAUDE.md; package.json with dev dependencies only (typescript 5.9.3, typescript 7.0.2 through an npm alias, vitest 5.0.2); three typecheck lanes (Bundler with DOM; NodeNext; Node16 CommonJS); tools/posture.mjs with the top-level-literal rule and tools/exports.mjs; `interface/INTERFACE.json` (no export, no import yet), `interface/pull.sh` and the boundary test; ci.yml with the one job `gate`; the kit (pre-push, automerge.yml, rulesets.yml, `.github/rulesets/main.json`). | Tick Allow auto-merge. Create the `rulesets` environment. Merge by hand. |
+| 7 | hpcworker | The vectors and their drift test: done as the `contract` export (section 6.1). The V11:722 and R5 text fix and the CLAUDE.md :58 and :298-303 lines: not re-checked here. No framework change. | Merge. |
 | 8 | hpcworker | Framework N+1: the 33-name strip list in worker.sbatch.tpl and clean_env_args (bin/hpcworker:342-346). Vectors regenerated. | Merge. Deploy. |
-| 9 | beethoven-base | PR #2: the 13 modules, `editions/*.json`, the pinned hpcworker texts and vectors, the posture scan with the top-level-literal rule. | Tag v1.0.0. |
-| 10 | beethoven-desktop | 2.0.0: base into `src/base`; `vendor-check` in the gate and CI; contract.ts, redact.ts, profile.ts and the account parsing use base; one floor clock per class; stale at 3 minutes; link order per D7; CLAUDE.md :42-43, 89, 101. | Merge. Pack. |
-| 11 | beethoven-extension | 16.0.0, on top of 15.0.0: base into `extension/src/base`; `vendor-check` in CI; the bundle scan for key names; the profile check fails instead of switching itself off (hygiene.test.ts:239-245; sync-profiles.mjs:26-30 only warns); the V11 text copy; CLAUDE.md :58, 329-334, 339. | Merge. Release. |
+| 9 | beethoven-base | PR #2: the 13 modules; the exports `desktop`, `browser` and `vscode` (kind `files`, version 1, one path per module under `src/`) in `interface/INTERFACE.json`; the import of hpcworker's `contract` export (version 1) into `test/hpcworker/`, taken with `interface/pull.sh`, and the parsers' tests against its vectors. | Merge. |
+| 10 | beethoven-desktop | 2.0.0: base's `desktop` export into `src/base` with desktop's own `interface/pull.sh`, an import in its `INTERFACE.json` checked by its boundary test; contract.ts, redact.ts, profile.ts and the account parsing use base; one floor clock per class; stale at 3 minutes; link order per D7; CLAUDE.md :42-43, 89, 101. | Merge. Pack. |
+| 11 | beethoven-extension | 16.0.0, on top of 15.0.0: base's `browser` export into `extension/src/base` with the extension's own `interface/pull.sh`, checked by its boundary test; the bundle scan for key names; the profile check fails instead of switching itself off (hygiene.test.ts:239-245; sync-profiles.mjs:26-30 only warns); the V11 text copy; CLAUDE.md :58, 329-334, 339. | Merge. Release. |
 | 12 | beethoven-extension | Adopt the kit. | Tick Allow auto-merge. Create the environment. Merge by hand. |
-| 13 | beethoven-vscode | 6.0.0, laptop side: links, signin, strip, redact, diagnostics, accounts and sshopts from base; a CI workflow (typecheck, unit tests, `vendor-check`, `vsce package`); the kit. | Merge by hand. Publish. |
-| 14 | beethoven-base | report.yml, plus propagate.yml if D8 says token. | Create `BASE_REPORT_TOKEN`, and the propagate token if chosen. |
+| 13 | beethoven-vscode | 6.0.0, laptop side: links, signin, strip, redact, diagnostics, accounts and sshopts from base's `vscode` export, taken with VS Code's own `interface/pull.sh` (VS Code adopts the interface standard first); a CI workflow (typecheck, unit tests with the boundary test, `vsce package`); the kit. | Merge by hand. Publish. |
+| 14 | beethoven-base | The lag report, which reads each edition's `interface/INTERFACE.json` (section 4). No propagate workflow in base: if D8 ever says token, propagation is each edition's own workflow (section 5). | Create `BASE_REPORT_TOKEN`. |
 | 15 | hpcworker | Framework N+2, only for what D3 and D4 add. Possibly nothing. | Deploy. |
 | 16 | beethoven-vscode | 7.0.0 onto hpcworker (section 7); the queue per D1; texts at TERMS_VERSION 8 or later (aa44696 already takes it to 7; main has 6). | Publish. |
 | 17 | beethoven-vscode | Remove grid/, or keep only the queue helper per D1, once 7.0.0 is on the Marketplace. | Merge. |
@@ -446,11 +530,11 @@ Each step is one pull request. **Hand** marks what you do yourself.
 - **c1, beethoven-qa cannot be checked.** It can now: research origin/main 8dd5be2 carries
   `vendor/beethoven-qa` and runs `vendor-check`. The critique read b7b8650, from before 95792e6.
 - **c1, desktop should build from `files: ["src/index.ts"]` with per-file allowances.** Not needed:
-  the per-edition lists pass desktop's scan unchanged, as source and as emitted JS (measured on the
-  prototype, which is not kept).
+  the per-edition lists (now exports) pass desktop's scan unchanged, as source and as emitted JS
+  (measured on the prototype, which is not kept).
 - **c1, an environment gives "greg as required reviewer".** That depends on the plan; GitHub
-  documents required reviewers on private repositories as Enterprise-only, so the `v*` tag rule
-  carries the gate.
+  documents required reviewers on private repositories as Enterprise-only. (The `v*` tag rule this
+  answer relied on went with the release tags on 2026-10-08; section 5.)
 - **c1, Vite keeps top-level calls such as `new RegExp`.** Refined, not rejected: Vite 8.3.1 dropped
   `new RegExp`, `new Set` and some local calls, and kept `.map`, `.join`, `Object.freeze` and a local
   call that builds a string or a RegExp from its argument. The rule stands.
@@ -482,8 +566,32 @@ already settled.
 
 ## 13. Risks
 
-- **An edition stuck on an old base brings drift back.** The report job makes it visible; it does
-  not prevent it.
+- **An edition stuck on an old base brings drift back.** The lag report makes it visible only once
+  the edition's import names an older export version; a copy taken at an old commit of the same
+  version is invisible to it, because the commit is only in the edition's private `ORIGIN`. It does
+  not prevent either.
+- **No downgrade refusal.** The first skeleton's check refused an `ORIGIN` older than the one on the
+  pull request's base branch. Under the standard an edition's boundary test compares the copy with
+  its own `ORIGIN` only, so a rebase that takes an older copy and its `ORIGIN` together passes, and
+  the edition compiles the older modules without a word. The lag report shows it only when the older
+  copy is also an older export version in the edition's `interface/INTERFACE.json`. A test in each
+  edition that compares its `ORIGIN` with the one on its base branch would close it; none is designed.
+- **The copy checks itself.** A hand edit that also rewrites `ORIGIN`'s `sha256` lines passes the
+  edition's boundary test. `check --source` closed that from base's checkout. Now only desktop's
+  `bash interface/pull.sh --pinned src/base` refuses it; the browser's has no refusing form
+  (`--at-origin` writes the copy again, and only `git diff` shows the edit); VS Code has no puller
+  yet. A person runs each with their own sign-in, and no CI can.
+- **A pull writes through a link.** Desktop's and the browser's pullers create folders, redirect and
+  move through a link anywhere in the copy folder's path (read at 9ce98bb and ae11a00, not run here),
+  so a link there, by hand or committed, takes a pull outside the edition's repository; the old vendor
+  command refused one. Base's own puller refuses one before it writes, and base's boundary test fails
+  on a tracked link that leaves the repository. The editions' pullers and tests are theirs to change.
+- **A pull writes over an uncommitted edit.** An ordinary pull (not desktop's `--pinned`) replaces a
+  copied file that was edited and not committed, without a word, in every puller, base's own
+  included; the old vendor command refused a file whose change neither `ORIGIN` nor `HEAD` held.
+- **An export's version is a promise kept by people.** Nothing checks that a change an edition must
+  act on raised the export's version; the edition's compiler and conformance tests are what catch a
+  missed raise, in the pull request that takes the copy.
 - **The writer (bash and Python) and the parsers (TypeScript) stay two implementations.** Drift is
   caught only as far as the vectors reach.
 - **Shared fixes change what students see**: desktop will warn at 3 minutes, a Console-key sign-in
@@ -515,3 +623,8 @@ already settled.
 - Whether grid_access.sh runs on a schedule now.
 - The organisation's GitHub plan, which decides environment secrets, deployment branches and
   required reviewers on private repositories.
+- `interface/pull.sh` run against GitHub from this repository: base takes nothing yet, and only
+  desktop's copy of the script has written committed `ORIGIN` records.
+- Whether the browser's hygiene walk and each edition's bundler pass over an `ORIGIN` file inside the
+  edition's source folder.
+- Whether hpcworker's `contract` vectors cover every case section 6.1 first asked for.

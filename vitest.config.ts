@@ -1,5 +1,5 @@
-// The tools' tests run in plain Node against throwaway git repositories in the system's temporary
-// folder; test/node18/ is node:test's, run by `npm run test:node18` (and on Node 18 in CI).
+// The tests run in plain Node, the tools' against throwaway folders and git repositories in the system's
+// temporary folder; none reaches the network or needs a secret.
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({

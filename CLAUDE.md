@@ -2,40 +2,49 @@
 
 The shared parsers and rules of the three Beethoven editions: a small TypeScript library that
 beethoven-desktop, beethoven-extension (the browser edition) and beethoven-vscode each take as a
-pinned copy inside their own source root, checked with no secret against an `ORIGIN` record. It
-holds once what the editions would otherwise each write: the meaning of what the grid writes (the
-`HPCW-STEP` lines, `status --json`, the gate's answers), the Claude Code link shapes, the
-subscription sign-in rule, the strip and redaction lists, the diagnostics engine. A fix made here
-reaches every edition the same way. It holds nothing a student reads and nothing that runs: the
-editions keep their UI, their sentences, their platform calls and their SSH stacks. This pull
-request is the skeleton (design section 10, step 6); the 13 modules, about 550 lines, come with
-step 9. Vendor: Gregory Schwing, trading as OpenSpineConsortium. Beethoven runs Claude Code and is
-not an Anthropic product; "Claude" and "Claude Code" are Anthropic's marks, used here to say what it
-runs; "Open OnDemand" is the mark of its publisher.
+pinned copy inside their own source root, with their own `interface/pull.sh`, checked by their own
+tests with no secret against an `ORIGIN` record. It holds once what the editions would otherwise each
+write: the meaning of what the grid writes (the `HPCW-STEP` lines, `status --json`, the gate's
+answers), the Claude Code link shapes, the subscription sign-in rule, the strip and redaction lists,
+the diagnostics engine. A fix made here reaches every edition the same way. It holds nothing a
+student reads and nothing that runs: the editions keep their UI, their sentences, their platform
+calls and their SSH stacks. This is the skeleton (design section 10, step 6), rebuilt on 2026-10-08
+to the ecosystem's interface standard; the 13 modules, about 550 lines, come with step 9. Vendor:
+Gregory Schwing, trading as OpenSpineConsortium. Beethoven runs Claude Code and is not an Anthropic
+product; "Claude" and "Claude Code" are Anthropic's marks, used here to say what it runs; "Open
+OnDemand" is the mark of its publisher.
 
 ## Read first
 
+- The interface standard, version 1: `INTERFACES.md` in the hub repository,
+  `OpenSpineConsortium/beethoven` (greg, 2026-10-07 11:35Z: "encapsulating each repo so that it is independent and not directly
+  accessing any code of another repo in the Beethoven ecosystem. Make sure it obeys the standard
+  API-type interfacing."). It governs how base offers and takes anything.
+- `interface/README.md`: what base offers and takes, and how an edition takes it.
 - `docs/DESIGN.md`: the design, with greg's decisions of 2026-10-05 00:28Z in section 12. Sections 1
   to 5 say what base is and holds, its source rules, how the editions take it and which credentials
   exist; section 10 is the migration order.
 - The non-negotiable rules in `hpcworker`'s, `beethoven-extension`'s and `beethoven-desktop`'s
   `CLAUDE.md` bind this library. The ones it touches are restated below; when they differ, theirs
   win.
-- `hpcworker`'s `docs/V11_CONTRACT.md` and `docs/V12_CONTRACT.md`: the contract base parses. They are
-  canonical there.
+- `hpcworker`'s `contract` export (its `interface/contract/`) and its `docs/V11_CONTRACT.md` and
+  `docs/V12_CONTRACT.md` (its `contract-text` export): the contract base parses. They are canonical
+  there.
 
 ## Direction: hpcworker -> base -> the editions
 
 - hpcworker is canonical for everything it writes: `status.json`, `connection.json`,
-  `progress.log`, the `HPCW-STEP` lines, the gate's answers, the site profiles and the two contract
-  texts. Base never defines a format. It parses what hpcworker's real writer makes, and its tests run
-  against hpcworker's texts and vectors, pinned in `test/hpcworker/` with `tools/pull-hpcworker.mjs`.
-  That pin is test data and never reaches an edition. A format changes in hpcworker first, against
-  its contract text, then here, then in each edition.
-- Base imports nothing of an edition's. An edition takes base only through `vendor`, never edits its
-  copy, and changes base through a pull request here and a new release.
+  `progress.log`, the `HPCW-STEP` lines, the gate's answers, the site profiles and the contract.
+  Base never defines a format. It parses what hpcworker's real writer makes, and from step 9 its
+  tests run against hpcworker's `contract` export (schemas, line grammar, rules and vectors), taken
+  with `interface/pull.sh` into `test/hpcworker/`. That copy is test data and is in no export. A
+  format changes in hpcworker first, against its contract, then here, then in each edition.
+- Base reads, runs and copies nothing from another repository's checkout, and imports nothing of an
+  edition's. An edition takes base only through its own export, with its own `interface/pull.sh`,
+  never edits its copy, and changes base through a pull request here.
 - hpcworker holds nothing for base, and no hpcworker workflow writes here. The site profiles stay
-  out of base: each edition pulls them with its own `pull.sh`.
+  out of base: desktop and the browser take hpcworker's `profiles` export themselves; VS Code holds
+  no profile today, adopts the standard at design step 13 and reads the profile from 7.0.0.
 - The lab's shared copy is never called outdated. `FRAMEWORK_MIN` is a fact in the lab lead's
   diagnostics only (D6). Within `v:1` changes are additive only, so an older copy still parses.
 
@@ -55,16 +64,18 @@ runs; "Open OnDemand" is the mark of its publisher.
   relies on, or treats as an option any paid usage beyond the student's own flat-rate subscription.
 - **Never a Claude credential.** Base never reads, stores, copies, prints or relays one: no
   `setup-token`, no `CLAUDE_CODE_OAUTH_TOKEN`, no `.credentials.json` under any configuration
-  directory, and never `claude auth logout`. Base reads no file at all; it parses only what an
-  edition hands it. One person, their own accounts.
+  directory, and never `claude auth logout`. Base's modules read no file at all; they parse only what
+  an edition hands them. One person, their own accounts.
 - **No secret for base, anywhere.**
   - No edition holds a secret for base. Its copy is checked with none, and nothing fetches base at
-    build time, in a store package or in a release script.
-  - This repository's CI holds none.
+    build time, in a store package or in a release script: a person takes a new copy with the
+    edition's `interface/pull.sh` and their own `gh` sign-in, in a pull request of its own.
+  - This repository's CI holds none. `interface/pull.sh` uses the person's own `gh` sign-in and never
+    names or reads a token variable.
   - The GitHub credentials that beethoven-base's protected environments may hold are for code only,
     and none of them is a Claude key or token. They are `RULESETS_TOKEN` in the Environment
-    `rulesets`, for `rulesets.yml`; `BASE_REPORT_TOKEN`, read-only, in `report` for `report.yml`, at
-    step 14; and no propagate token, under D8. Each environment's deployment branches are main only
+    `rulesets`, for `rulesets.yml`; `BASE_REPORT_TOKEN`, read-only, in `report` for the lag report,
+    at step 14; and no propagate token, under D8. Each environment's deployment branches are main only
     (design section 5).
   - No workflow anywhere runs Claude Code.
 - **Secrets never appear on a command line, in argv, in logs, in job files or in `sbatch --export`.**
@@ -73,14 +84,18 @@ runs; "Open OnDemand" is the mark of its publisher.
 - **No code on claude.ai.** Base holds the Claude Code link shapes so that an edition can check a
   link before handing it to the opener. It fetches nothing, injects nothing and parses no claude.ai
   traffic.
-- **No remote code.** No `eval`, no `new Function`, no fetched scripts. Base loads nothing. Its tools
-  run only git, Node and the two pinned TypeScript compilers.
-- **Nothing is deleted** outside a tool's own temporary folders.
-  - `vendor` and `pull-hpcworker` never delete. A file that a new release or a new pin no longer has
-    is printed with the line that removes it, for a person to run in a reviewed commit, and the
-    checks fail until it is gone.
-  - The lanes and the tests remove only the folders they made with mkdtemp; the tests refuse to
-    remove any other.
+- **No remote code.** No `eval`, no `new Function`, no fetched scripts. Base's modules load nothing.
+  Its tools run nothing but git, Node and the two pinned TypeScript compilers, and the puller `gh`
+  and the shell's own tools; nothing a pull fetches is ever run.
+- **Nothing is deleted** outside a tool's own temporary files and folders.
+  - `interface/pull.sh` never deletes a file it did not fetch. A file the provider dropped from an
+    export is listed for a person to remove in a reviewed commit, and the boundary test fails until it
+    is gone. The only file it removes is a `.part` file it fetched itself, when a pull fails before
+    placing it: it refuses an export file whose name ends in `.part` and a `.part` file already in the
+    folder, so no other can be one.
+  - The lanes and the tests remove only the folders they made with mkdtemp and what they put in them.
+    The tests make and remove theirs through `test/fixtures.mjs`, which refuses to remove any folder
+    but one of its own under the system's temporary folder.
   - Nothing here ever touches anything under `$HOME` or a Claude Code login directory.
   - Base has no destructive command. If one is ever added, it refuses when `CLAUDECODE`,
     `BEETHOVEN_REQUEST_ID` (or `ASHLEY_REQUEST_ID`) or a similar agent marker is in the
@@ -96,9 +111,9 @@ runs; "Open OnDemand" is the mark of its publisher.
   - The public name is Beethoven, and the trademark sentence above stands wherever the product is
     described.
   - Never use the word that starts "prov" and ends "enance" for the history of a file or a piece of
-    data; say origin, source or record. The copy's record is `ORIGIN`.
-  - Versions are integers (1.0.0, 2.0.0), never fractional. `package.json` and the release tag
-    `v<N>.0.0` carry the same one.
+    data; say origin, source or record. A copy's record is `ORIGIN`.
+  - Versions are integers (1.0.0, 2.0.0), never fractional. `package.json` carries one, and each
+    export in `interface/INTERFACE.json` carries its own integer `version`; there are no release tags.
 
 ## The source rules (`src/`)
 
@@ -109,8 +124,10 @@ options at once. So a module in `src/` has:
 - **No platform call**: no network, file, process, timer, console, storage, DOM or browser API.
 - **No I/O and no hashing**: neither `node:crypto` nor WebCrypto. An edition hashes; base offers
   only comparisons, such as `fingerprintMatches`.
-- **No import beyond its own files**, and those only as `./<name>.js`: no `node:` module, no
-  package, nothing outside the folder.
+- **No import beyond its own files**, and those only as `./<name>.js` (not `./<name>` or
+  `./<name>.ts`): no `node:` module, no package, nothing outside the folder, and no triple-slash
+  directive (a reference path reaches a file past the export check; a reference lib or types gives a
+  module a library its edition's lane lacks, such as the DOM in the desktop lane).
 - **ES2022 only**, so desktop's Node 18 holds.
 - **Nothing that runs on import.** A top-level value is a literal or a `/*#__PURE__*/` call whose
   arguments are literals; Vite drops these when they are unused and keeps other top-level code in the
@@ -122,7 +139,8 @@ options at once. So a module in `src/` has:
 
 `tools/posture.mjs` enforces these rules and names each finding with its file and line.
 
-The three lanes compile every module as each edition will hold it:
+The three lanes compile every module of `src/` together, laid out where and as each edition will
+hold its copy, under that edition's options:
 
 | Lane | Options |
 |---|---|
@@ -131,65 +149,74 @@ The three lanes compile every module as each edition will hold it:
 | VS Code | Node16, CommonJS, under TypeScript 5.9.3 and again under 7.0.2 (the version VS Code's main pins) |
 
 Every lane sets strict flags and `types: []`, so a module that leans on Node's or a browser's types
-fails.
+fails (the posture scan refuses the triple-slash directive that would bring them back). No lane
+compiles one export's modules alone; what keeps an export whole is the export check below, over the
+imports the posture scan allows.
 
-Each edition's list of modules is `editions/<name>.json`, in the form `{"modules": [...]}`. A
-module's imports must be on every list that takes it; `node tools/vendor.mjs lists` checks this.
+What each edition takes is its export in `interface/INTERFACE.json` (from step 9: `desktop`,
+`browser`, `vscode`, kind `files`, one path per module under `src/`); that file is the one place.
+`tools/exports.mjs`, run by `npm run posture`, fails an export one of whose paths matches no tracked
+file, an edition's export with a path outside `src/` (its copy lands below the folder all its paths
+share, so every module would move one folder down), or an export that carries a module without a
+module it imports (`./<name>.js`) or that names a file in a triple-slash reference, naming the export,
+the file and the import.
 
 ## How an edition takes base
 
-**The vendor command.** `node tools/vendor.mjs vendor --into <edition checkout> --edition
-<desktop|browser|vscode>`. Run it from a clean base checkout whose HEAD carries a `v*` tag.
+The interface standard's rule 3, in the edition's own repository; no tool of base's runs there.
 
-- It reads everything from the tag's own git objects.
-- It writes the edition's listed modules into `src/base/` (desktop) or `extension/src/base/` (the
-  browser and VS Code).
-- It writes `vendor/beethoven-base/check.mjs` and `ORIGIN` at the edition's repository root, `ORIGIN`
-  last.
-- `ORIGIN` holds beethoven-qa's five fields (repository, ref, commit, tree_sha256, files), then an
-  `edition:` line and one `file: <path> <sha256>` line per file.
+- **The import.** The edition's `interface/INTERFACE.json` names base's export for it, the version
+  its code reads and the folder: `src/base` for desktop, `extension/src/base` for the browser and
+  VS Code.
+- **The pull.** The edition's own `interface/pull.sh` (each edition writes its own puller: the
+  standard says what it must do, not its text, and desktop's and the browser's differ in their flags
+  and their checks; VS Code has none until it adopts the standard at design step 13), for example
+  `bash interface/pull.sh src/base` in desktop, asks GitHub through the person's own `gh` sign-in for
+  a commit base's `main` contains, base's `INTERFACE.json` at that commit, and only the files the
+  export lists at that version. It fetches every file before placing any, writes each module at its
+  path below `src/` in the folder (the export check keeps an edition's paths under `src/`), and writes
+  `ORIGIN`:
 
-**What vendor refuses.** It writes nothing if it finds:
+  ```
+  repository OpenSpineConsortium/beethoven-base
+  commit <40 hex>
+  export desktop 1
+  sha256 <64 hex> links.ts
+  ```
 
-- a dirty base checkout or an untagged HEAD;
-- a list that misses an import;
-- a link anywhere in its path;
-- a file added to the copy by hand;
-- a file whose change neither `ORIGIN` nor the edition's HEAD holds;
-- a release older than the copy's, or than the one on the edition's `origin/main`.
+  It never deletes; a module base dropped is listed for a person to remove in a reviewed commit.
+  Desktop's `--pinned` takes again exactly the commit `ORIGIN` names and refuses unless what it
+  fetched is what `ORIGIN` records. The browser's puller (beethoven-extension ae11a00) has no such
+  form: its `--at-origin` takes the same commit again and writes over the files and `ORIGIN` without
+  comparing, so only `git diff` afterwards shows what changed, and it refuses a folder that does not
+  exist yet (`mkdir -p extension/src/base` before the first pull).
+- **The check.** The edition's own boundary test, in its own test run, with no secret and no
+  network, fails when a file differs from `ORIGIN`, when the folder holds a file `ORIGIN` does not
+  list (besides `ORIGIN`, `README.md` and `pull.sh`), and when `ORIGIN`'s export or version is not the
+  one the import names. Its conformance tests then say whether its code still reads the copy.
+- **What a consumer acts on** is the export's integer version and the commit in its `ORIGIN`, never a
+  release tag. A change an edition must act on raises the export's version in the same pull request
+  as the code; an additive one keeps it.
 
-It never deletes.
+**What the old pinned copy did that this does not** (design section 13), recorded as risks:
 
-**Exit codes**:
-
-| Code | Meaning |
-|---|---|
-| 0 | Written |
-| 1 | Written, but files of the older release remain (printed with the line that removes them) |
-| 2 | Refused, nothing written |
-| 3 | Stopped part way by the file system |
-
-**In the edition**, CI and the pre-push hook run `node vendor/beethoven-base/check.mjs`. It needs no
-secret, no package and no network, and runs on Node 18 or later on any platform; base's CI runs it
-on Linux and Windows. CI checks out with `fetch-depth: 0` so that `origin/<base>` is present. The
-check fails when:
-
-- a file differs from `ORIGIN`;
-- the copy holds a file `ORIGIN` does not list;
-- `ORIGIN`'s release is older than the one on the pull request's base branch. This catches a rebase
-  that took the older side.
-
-**From base.** `node tools/vendor.mjs check --into <edition> --source <this checkout>` rebuilds the
-copy from the commit `ORIGIN` names. That closes the one gap of a check that is the copy checking
-itself: an edited `check.mjs` together with a rewritten `ORIGIN`.
-
-**One implementation of the record.** `vendor/check.mjs` is the template and also the only
-implementation of the `ORIGIN` record; base's own tools import it, so what `vendor` writes is what
-`check` reads. Every edition carries it byte for byte from the release on, so change it with that in
-mind. It uses only Node 18's APIs and handles Windows paths.
+- It refused an `ORIGIN` older than the one on the pull request's base branch, which caught a rebase
+  that took the older side. Under the standard an edition's test cannot tell an older copy from a
+  newer one.
+- `check --source` rebuilt the copy from base's own checkout, so a hand edit that also rewrites
+  `ORIGIN`'s `sha256` lines was caught. Now it passes the edition's test. The standard defines no
+  audit for it: in desktop, `bash interface/pull.sh --pinned src/base`, run by a person with their own
+  sign-in, refuses it; in the browser, `--at-origin` and then `git diff` show it without refusing; VS
+  Code has no puller yet. No CI can run any of them.
+- It wrote nothing through a link anywhere in its path. Desktop's and the browser's pullers (read at
+  9ce98bb and ae11a00, not run here) create folders, redirect and move through a link, so a link in
+  the edition's copy folder takes a pull outside the edition's repository. Base's own puller refuses
+  one before it writes.
+- It refused a file whose change neither `ORIGIN` nor the edition's `HEAD` held. Every puller,
+  base's own included, writes over a copied file that was edited and not committed, without a word.
 
 **Not built yet:** opening the editions' pull requests is a session's job, with its own sign-in (D8:
-no token). `report.yml`, the lag report, is step 14.
+no token). The lag report is step 14.
 
 ## Build and test
 
@@ -197,16 +224,14 @@ no token). `report.yml`, the lag report, is step 14.
 npm ci                       # dev dependencies only, pinned exactly; also points git at .githooks
 npm run gate                 # all of the below, as the pre-push hook and CI run it
 npm run typecheck            # the lanes: desktop, browser, vscode (5.9.3), vscode (7.0.2)
-npm run typecheck:tools      # the tools, the template and the tests (checkJs, strict)
-npm run posture              # the source rules over src/
-npm run vendor-check-self    # editions/*.json against src/
-npm test                     # vitest: vendor, check, posture and pull-hpcworker against throwaway git repositories
-npm run test:node18          # check.mjs and vendor.mjs under node:test; CI also runs it on Node 18
-node tools/pull-hpcworker.mjs --ref <ref> [--from <hpcworker checkout>]   # pin hpcworker's texts and vectors
+npm run typecheck:tools      # the tools and the tests (checkJs, strict)
+npm run posture              # the source rules over src/, then the export check (tools/exports.mjs)
+npm test                     # vitest: the boundary test, the export check, the posture scan
+bash interface/pull.sh --all # every import (none yet), through your own gh sign-in
 ```
 
-- **Node versions.** Development needs Node 22.12 or later, which vitest 5 requires. `check.mjs`
-  needs Node 18 or later. Node 18.0.0 has no `--test` flag, so the Node 18 file is run directly.
+- **Node versions.** Development needs Node 22.12 or later, which vitest 5 requires. The modules
+  themselves keep to ES2022, so desktop's Node 18 runs them.
 - **No runtime dependency, ever.** An edition compiles base's source, so base has nothing to install
   there.
 - **TypeScript 7.0.2** comes in as the npm alias `typescript7`. The lanes call each compiler by its
@@ -215,9 +240,13 @@ node tools/pull-hpcworker.mjs --ref <ref> [--from <hpcworker checkout>]   # pin 
   does the same.
 - **Never commit a lockfile you did not produce with npm.**
 - **Where the tests run git.** Only in folders of their own under the system's temporary folder,
-  with an environment that drops git's repository variables and the person's own configuration. A
-  pre-push hook hands the gate `GIT_DIR`, and a git that inherits it acts on this checkout whatever
-  `-C` names; beethoven-qa measured that on 2026-10-04.
+  with an environment that drops git's repository variables and the person's own configuration, and
+  read-only in this checkout (`git ls-files`, `git cat-file`, `git rev-parse`). A pre-push hook hands
+  the gate `GIT_DIR`, and a git that inherits it acts on this checkout whatever `-C` names;
+  beethoven-qa measured that on 2026-10-04.
+- **No test reaches the network or needs a secret.** The puller's tests source it and run its pure
+  parts, and run it whole with a stand-in for `gh` first on the `PATH` that answers from a folder, so
+  the `ORIGIN` it writes is shown to be the one `test/origin.ts` reads.
 
 ## Pull requests and the gate
 
@@ -235,34 +264,35 @@ node tools/pull-hpcworker.mjs --ref <ref> [--from <hpcworker checkout>]   # pin 
   - Until that rule is applied, a pull request is merged by hand.
   - Environment secrets on a private repository depend on the organisation's GitHub plan, which is
     not yet measured.
-- **The required checks**, by their exact names, each from GitHub Actions (integration 15368):
-  - `gate`
-  - `check.mjs on Node 18 (ubuntu-latest)`
-  - `check.mjs on Node 18 (windows-latest)`
-
-  A job renamed in `ci.yml` is renamed in `main.json` in the same commit.
-- **A release** is a `v<N>.0.0` tag on main, which an organisation admin pushes. `vendor` takes only
-  a tagged commit.
+- **The required check**, by its exact name, from GitHub Actions (integration 15368): `gate`. A job
+  renamed in `ci.yml` is renamed in `main.json` in the same commit.
+- **What an edition takes is a merged commit.** Nothing is tagged. A change an edition must act on
+  raises its export's `version` in `interface/INTERFACE.json` in the same pull request as the code.
 
 ## Layout
 
-- `src/`: the modules. In pull request #1 it holds only the placeholder `index.ts`.
-- `editions/`: `desktop.json`, `browser.json` and `vscode.json`, the modules each edition takes.
-- `vendor/check.mjs`: the edition's check and the `ORIGIN` record.
+- `src/`: the modules. Until step 9 it holds only the placeholder `index.ts`, which no export lists.
+- `interface/`: `INTERFACE.json` (what base offers and takes; format 1, `exports` and `imports` empty
+  until step 9), `pull.sh` (base's own puller, ported from beethoven-desktop's, with refusals
+  desktop's lacks: an import folder outside `test/<name>`, a link on the way, a `.part` name) and
+  `README.md`.
 - `tools/`:
-  - `vendor.mjs`: vendor, check and lists;
-  - `lib.mjs`: the refusals and the guarded writes;
-  - `posture.mjs`;
-  - `pull-hpcworker.mjs`;
-  - `lanes.mjs`;
-  - `hooks.mjs`.
+  - `posture.mjs`: the source rules;
+  - `exports.mjs`: every export's paths name tracked files, an edition's stay under `src/`, and each
+    export carries its modules' imports;
+  - `lanes.mjs`: the three typecheck lanes;
+  - `hooks.mjs`: points git at `.githooks`.
 - `tsconfig.desktop.json`, `tsconfig.browser.json`, `tsconfig.vscode.json`: each edition's options.
   `tsconfig.tools.json` covers the tools and tests.
 - `test/`:
-  - `fixtures.mjs`;
-  - the vitest files;
-  - `node18/check.test.mjs`;
-  - `hpcworker/`: the pinned texts and vectors, with their `ORIGIN`, from step 9.
+  - `boundary.test.ts`: the interface standard's rules 1 to 3 for base (with what desktop's and
+    hpcworker's boundary tests miss: a path given as separate arguments, another repository's action
+    or reusable workflow, a package fetched from GitHub, a fetched script piped into a shell, a link
+    out of the repository, an `ORIGIN` no import declares), and the puller;
+  - `origin.ts`: the `ORIGIN` check, which also refuses a link and a record of no file;
+  - `exports.test.ts`, `posture.test.ts`, `index.test.ts`;
+  - `fixtures.mjs`: throwaway folders and git repositories;
+  - `hpcworker/`: from step 9, hpcworker's `contract` export with its `ORIGIN`.
 - `docs/DESIGN.md`.
 - `.githooks/pre-push`, `.github/workflows/` (`ci.yml`, `automerge.yml`, `rulesets.yml`) and
   `.github/rulesets/main.json`.
@@ -270,10 +300,13 @@ node tools/pull-hpcworker.mjs --ref <ref> [--from <hpcworker checkout>]   # pin 
 ## How to be useful here
 
 A wrong state that reads as plausible is the failure to fear: a check that passes because it never
-looked, a lane that compiles the wrong module kind, a pure mark Vite ignores.
+looked, a lane that compiles the wrong module kind, a pure mark Vite ignores, an export check over an
+empty list of exports.
 
 - **Check against something outside the computation**: hpcworker's real vectors, the edition's own
   compiler options, a built bundle, a mutation that must turn a test red.
 - **Say plainly what is not known.** "Not yet measured" is the preferred form. Not yet measured:
-  - `check.mjs` on a Windows machine (the CI lane will be the first);
+  - `interface/pull.sh` run against GitHub from this repository (base takes nothing yet; desktop's
+    copy of the same script wrote desktop's committed `ORIGIN` records);
+  - whether each edition's own scans and bundlers accept an `ORIGIN` file inside its source folder;
   - the organisation's GitHub plan, which decides the environments.

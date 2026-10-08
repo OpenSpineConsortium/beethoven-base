@@ -18,15 +18,18 @@ import { cpSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } fr
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EDITION_ROOTS } from '../vendor/check.mjs';
 
 const BASE = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const COMPILERS = { 5: join(BASE, 'node_modules', 'typescript', 'bin', 'tsc'), 7: join(BASE, 'node_modules', 'typescript7', 'bin', 'tsc') };
-/** each edition's package.json folder and module kind, read from the editions' checkouts (design section 3) */
+/**
+ * Each edition's folder for the modules (the "into" of its import of base's export, design section 4),
+ * its package.json folder and its module kind, as read in the editions' repositories (design section 3).
+ * Written here by hand: base reads nothing of an edition's.
+ */
 const LANES = {
-  desktop: { pkgDir: '.', type: 'module' },
-  browser: { pkgDir: 'extension', type: 'module' },
-  vscode: { pkgDir: 'extension', type: undefined },
+  desktop: { root: 'src/base', pkgDir: '.', type: 'module' },
+  browser: { root: 'extension/src/base', pkgDir: 'extension', type: 'module' },
+  vscode: { root: 'extension/src/base', pkgDir: 'extension', type: undefined },
 };
 
 /** @param {keyof typeof LANES} lane @param {5 | 7} compiler @returns {number} */
@@ -36,8 +39,7 @@ function runLane(lane, compiler) {
   const modules = readdirSync(join(BASE, 'src')).filter((n) => n.endsWith('.ts'));
   const stage = mkdtempSync(join(tmpdir(), `beethoven-base-lane-${lane}-`));
   try {
-    const root = EDITION_ROOTS[lane];
-    const { pkgDir, type } = LANES[lane];
+    const { root, pkgDir, type } = LANES[lane];
     mkdirSync(join(stage, ...root.split('/')), { recursive: true });
     for (const m of modules) cpSync(join(BASE, 'src', m), join(stage, ...root.split('/'), m));
     writeFileSync(join(stage, pkgDir, 'package.json'), JSON.stringify({ private: true, ...(type ? { type } : {}) }, null, 2) + '\n');

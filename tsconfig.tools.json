@@ -1,6 +1,6 @@
 {
-  // The tools, the check.mjs template and the tests, checked with their JSDoc types. lib ES2022 keeps
-  // the template and the tools to what Node 18 has (vendor/check.mjs runs on Node 18 in the editions).
+  // The tools and the tests, the tools checked with their JSDoc types, under the ES2022 library the
+  // desktop and VS Code lanes give the modules.
   "compilerOptions": {
     "target": "ES2022",
     "module": "NodeNext",
@@ -15,5 +15,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["tools/**/*.mjs", "vendor/**/*.mjs", "test/**/*.ts", "test/**/*.mjs", "vitest.config.ts"]
+  "include": ["tools/**/*.mjs", "test/**/*.ts", "test/**/*.mjs", "vitest.config.ts"]
 }

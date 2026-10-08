@@ -1,8 +1,8 @@
 #!/bin/sh
 # The gate runs before every push, not only in CI (greg, project thread, 2026-10-04 02:11Z): the
-# three typecheck lanes, the tools lane, the posture scan, the edition lists, the tests and check.mjs
-# on this Node. A push with a red gate does not leave the machine. Skip it only knowingly, with
-# SKIP_GATE=1, and say so in the commit.
+# three typecheck lanes, the tools lane, the posture scan and the export check, and the tests. A push
+# with a red gate does not leave the machine. Skip it only knowingly, with SKIP_GATE=1, and say so in
+# the commit.
 if [ "${SKIP_GATE:-}" = 1 ]; then
   echo "pre-push: gate skipped (SKIP_GATE=1)" >&2
   exit 0

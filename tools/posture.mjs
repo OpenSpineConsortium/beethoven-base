@@ -5,7 +5,10 @@
 // Base is pure TypeScript an edition compiles into itself, so each module must hold nothing that does
 // I/O, calls a platform, hashes, loads code, or runs when it is imported. It fails, with file:line, on:
 // - an import, export-from, import type, import(), require or `import x =` of anything but a module
-//   beside it ("./<name>.js"): no node: module, no package, nothing outside the folder; import.meta;
+//   beside it ("./<name>.js", with that ending: the browser's Bundler lane would accept "./<name>"):
+//   no node: module, no package, nothing outside the folder; import.meta; a triple-slash directive
+//   (a reference path reaches a file past the export check, and a reference lib or types gives a
+//   module a library its edition's lane does not have, such as the DOM in the desktop lane);
 // - a reference to a platform's globals: fetch, XMLHttpRequest, WebSocket, EventSource, process,
 //   Buffer, fs, child_process, crypto, window, document, navigator, chrome, browser, globalThis,
 //   storage, timers, console; eval, and new Function; the word subtle anywhere outside a comment;
@@ -122,8 +125,14 @@ function scan(file) {
   // ---- imports and references -------------------------------------------------------------------
   /** @param {ts.Node} node @param {string} spec */
   const specifier = (node, spec) => {
-    if (!/^\.\/[a-z][a-z0-9-]*(?:\.js|\.ts)?$/.test(spec)) at(node, `imports ${spec} (base imports nothing but the modules beside it, as "./<name>.js")`);
+    if (!/^\.\/[a-z][a-z0-9-]*\.js$/.test(spec)) at(node, `imports ${spec} (base imports nothing but the modules beside it, as "./<name>.js")`);
   };
+  // a directive is a comment to the parser, so it is read from the source file's own lists, never the text
+  for (const r of [...sf.referencedFiles, ...sf.typeReferenceDirectives, ...sf.libReferenceDirectives]) {
+    const line = sf.getLineAndCharacterOfPosition(r.pos).line + 1;
+    find(file, line, 'a triple-slash directive (base imports only with import ... from "./<name>.js", under each lane\'s own lib and types)', text.split('\n')[line - 1] ?? '');
+  }
+  if (sf.hasNoDefaultLib) find(file, 1, 'a triple-slash directive (no-default-lib: each lane keeps its own lib)', '/// <reference no-default-lib="true"/>');
   /** @param {ts.Node} node */
   const visit = (node) => {
     if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
