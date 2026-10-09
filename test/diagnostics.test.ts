@@ -24,6 +24,7 @@ import {
   type GuardStep,
   type NodeReport,
   type NodeStatus,
+  type RepairResult,
   type RunOpts,
 } from '../src/diagnostics.js';
 
@@ -667,6 +668,21 @@ describe('a check that crashes', () => {
   it("gives an answer's detail as '' when it is not text", async () => {
     const rep = await runDiagnostics([node('a', [], { check: async () => ({ ok: true, detail: 7 }) as unknown as CheckResult })], fresh());
     expect(rep.reports[0]).toMatchObject({ status: 'ok', detail: '' });
+  });
+
+  it("gives a repair's detail as '' when it is not text, whether the repair failed, worked, or left the check failing", async () => {
+    const failed = node('f', [], { repair: async () => ({ ok: false, detail: 42 }) as unknown as RepairResult });
+    const worked = node('w', [], {
+      async repair(c) {
+        c.broken.delete('w');
+        return { ok: true, detail: {} } as unknown as RepairResult;
+      },
+    });
+    const idle = node('s', [], { repair: async () => ({ ok: true, detail: [1] }) as unknown as RepairResult });
+    const rep = byId(await runDiagnostics([failed, worked, idle], fresh(['f', 'w', 's']), { repair: true, words: BROWSER_WORDS }));
+    expect(rep.f).toMatchObject({ status: 'fail', detail: 'f broken', repair: '', repairOutcome: 'failed' });
+    expect(rep.w).toMatchObject({ status: 'repaired', detail: 'w ok (was: w broken)', repair: '', repairOutcome: 'repaired' });
+    expect(rep.s).toMatchObject({ status: 'fail', detail: 's broken; repair ran () but the check still fails: s broken', repair: '', repairOutcome: 'still-fails' });
   });
 });
 
