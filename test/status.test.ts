@@ -414,6 +414,17 @@ describe('the watch: its status events read, its keepalive never does', () => {
     expect(parseWorkerStatusLine(LINE.replace('{"v":1,', '{"v":1,"event":"progress",'))).toBeUndefined();
   });
 
+  it('a line holding event as null, empty, false or 0 is neither a status line nor a status event, and reads as no status', () => {
+    // status_line says not: {required: [event]} and watch_status's event is the const "status", so the
+    // key alone, whatever its value, makes the line one the schema refuses as a status
+    for (const value of ['null', '""', 'false', '0']) {
+      const line = LINE.replace('{"v":1,', `{"v":1,"event":${value},`);
+      expect(validLine(JSON.parse(line)), value).toBe(false);
+      expect(validWatchStatus(JSON.parse(line)), value).toBe(false);
+      expect(parseWorkerStatusLine(line), value).toBeUndefined();
+    }
+  });
+
   it('a status event reads with its event and final, after keepalives', () => {
     for (const final of [false, true]) {
       const line = event(final);

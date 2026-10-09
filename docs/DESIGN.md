@@ -50,7 +50,7 @@ and beethoven-agents a40a71a; where they follow the contract, they follow it ove
 where the editions differ from each other they take the stricter side. Section 2 now says, after its
 table, where the built modules differ from it; section 6.1 answers which cases the export covers;
 section 15 lists, per edition, what changes for its students and its code when it takes its export,
-and the choices step 9 made where the contract is silent. Sections 1 to 6, 9 to 11, 13 and 14 are
+and the choices step 9 made where the contract is silent. Sections 1 to 6, 8 to 11, 13 and 14 are
 updated for it, and section 15 is new; section 12 is unchanged. The step's first review is folded in:
 what it found that belongs to hpcworker is in section 6.1's requests, and what it changes for an
 edition is in section 15.
@@ -59,7 +59,7 @@ edition is in section 15.
 
 - beethoven-base is a small TypeScript library of 13 modules. Each module has two or more real
   consumers today, or is a rule every edition must apply the same way. The estimate here was about
-  550 lines; as built at step 9, after its second review, the modules are 2,639 lines, 1,493 of them
+  550 lines; as built at step 9, after its third review, the modules are 2,668 lines, 1,495 of them
   code (counted from the parse tree, comments and blank lines left out). The rest is comments, which
   say why on every export, and blank lines; the code is longer than the estimate because each file is
   read field by field, and every list the contract carries is typed out so a test can hold it equal to
@@ -119,8 +119,8 @@ differs from its row above:
 | run.ts | 124 (56) | links, status | Also R1, `CONTRACT_TIME` (the schema's time pattern with its fields captured, held equal to it) and `isStaleAt`, R12 on a heartbeat the edition has already timed (the browser's, section 15.2). Stale only past 180 s (V11 R12, hpcworker's status_line and the browser's facts.ts; its worker.ts is stale at exactly 180 s). Reads connection.json before status.json and `session_url` before `environment_url` in each, as facts.ts does: `openLinkOf` is Open, `newSessionLinkOf` (an environment link only) is New session (D7). |
 | meaning.ts | 120 (48) | steps, gate | Five next steps: retry, retry-later, sign-in-again, fix-request, ask-lead. Also read's three failures, and `no-gate` as ask-lead. `busy` stays retry-later though some of its causes do not pass (section 15.4). |
 | profile.ts | 310 (205) | none | Merged before step 9 (PR #2). |
-| redact.ts | 101 (44) | none | `redact`'s rules take every credential shape `redactCredentials`' rules take: the JSON credential fields, the `ANTHROPIC_` and `CLAUDE_CODE_` key variables and the private-key block come before the 40-character rule, which stopped at each `+` and `/` of a key (sections 15.1 and 15.2). Since the second review both sets also take a JSON `token` or `secret` field, a key variable written as a quoted JSON key (settings.json's `env` block) and an HTTP Basic credential after an Authorization header (section 15.4). Both functions are for text: a structured value is redacted string by string, never as serialised JSON (section 15.1). VS Code's consumer is gridApi.ts's `redactCredentials`. diagReport.ts's `scrub` (TOKEN_LIKE at :43, not :37) is another rule set, with a `<token>` mark, a JWT rule and 8-character minimums, and stays VS Code's (section 15.4). |
-| accounts.ts | 272 (152) | none | Reads by the registry schema's types (bee's own parsing coerces "1" and "no"; base refuses them), refuses a folder with a `..` step or a control character, keeps the file's order on a tie, and returns codes, never an unknown key's name. A refusal bee might not make carries `beeMayTake`, and `beeRefusesToo` says whether bee's own list would name a fault (desktop's pointer, section 15.1). |
+| redact.ts | 126 (44) | none | `redact`'s rules take every credential shape `redactCredentials`' rules take: the JSON credential fields, the `ANTHROPIC_` and `CLAUDE_CODE_` key variables and the private-key block come before the 40-character rule, which stopped at each `+` and `/` of a key (sections 15.1 and 15.2). Since the second review both sets also take a JSON `token` or `secret` field, a key variable written as a quoted JSON key (settings.json's `env` block) and an HTTP Basic credential after an Authorization header (section 15.4). Since the third review `redact` runs `redactCredentials`' rules before its own, so its output never holds what `redactCredentials` would have taken, and four rules are wider: the JSON credential field reads past an escaped quote, the key or token variable also takes `AWS_BEARER_TOKEN_BEDROCK` and a name in any case, Bearer takes the word in any case, and `redact`'s general rule takes a name that ends in its word (`DB_PASSWORD=`) and access key (section 15.4). Both functions are for text: a structured value is redacted string by string, never as serialised JSON (section 15.1). VS Code's consumer is gridApi.ts's `redactCredentials`. diagReport.ts's `scrub` (TOKEN_LIKE at :43, not :37) is another rule set, with a `<token>` mark, a JWT rule and 8-character minimums, and stays VS Code's (section 15.4). |
+| accounts.ts | 276 (154) | none | Reads by the registry schema's types (bee's own parsing coerces "1" and "no"; base refuses them), refuses a folder with a `..` step or a control character, keeps the file's order on a tie, and returns codes, never an unknown key's name. A refusal bee might not make carries `beeMayTake`, and `beeRefusesToo` says whether bee's own list would name a fault (desktop's pointer, section 15.1). |
 | sshopts.ts | 164 (61) | none | The union of desktop's and VS Code's options, the stricter side where they differ (`StrictHostKeyChecking=yes`, `GSSAPIAuthentication=no`, `ConnectTimeout=20` on the sign-in too), and a known_hosts path refused where ssh would split or expand it. It also closes every other source of host keys: `GlobalKnownHostsFile` is the pinned file, `VerifyHostKeyDNS=no`, `NoHostAuthenticationForLocalhost=no`, and `KnownHostsCommand=none` when the edition passes the version `ssh -V` printed and it is 8.5 or later (section 15.4). It owns connection sharing too: `ControlPath=none` and `ControlMaster=no` unless the edition names its own control path (desktop's), so no master another ssh opened carries a call. `tool` gives scp's and sftp's `-P` for the port, where ssh's is `-p`. |
 | signin.ts | 106 (41) | none | Follows rules.json's text where hpcworker's `hpcw_claude_signin` differs from it: `apiProvider` null or empty reads as other (section 15.4). A parsed answer is judged by its own keys, then printed and read as text, so a nested key counts as the worker counts it; a parse has already lost a repeated key, so an edition passes the text. `signinAnswered` tells an answer that says not signed in from no answer at all, both `none` (VS Code's "did not answer", section 15.3). VS Code's cell is out of date: at e7526f9 wizard.ts:547 refuses an answer that carries `apiKeySource`. |
 | strip.ts | 90 (40) | none | rules.json's 15 names, not yet section 6.4's 33; the two Remote Control variables only on request. `withoutCredentials` returns the environment with the names removed, and `credentialOverrides` returns `{NAME: undefined}` for a caller that merges over its own environment, as VS Code's `run()` does (section 15.3). VS Code's cell is out of date: at e7526f9 services.ts:24 already holds all 15, in rules.json's order. |
@@ -164,7 +164,7 @@ moves, base replaces about 550 duplicated lines: desktop about 350 (all 203 of c
 of redact.ts, profile.ts:44-79 and the parse parts of accounts.ts) and VS Code about 205
 (diagnostics.ts minus its layer types, accounts.ts:47-75, services.ts:21-26, wizard.ts:533-535,
 shell.ts:135). At 7.0.0 VS Code also takes steps, status, gate, run, meaning and profile, about 280
-lines it would otherwise write by that estimate; as built at step 9 those six modules are 1,463
+lines it would otherwise write by that estimate; as built at step 9 those six modules are 1,464
 lines, 891 of them code. Critique 2's figure of about 850 counted the terms core, floors and the step
 sentences, which stay out. For scale, the client code is 37,141 lines: browser src 25,046, VS Code
 src and grid 9,516, desktop src 2,579.
@@ -207,7 +207,8 @@ and a deletion, and the browser's old-name and key-word rules, which read commen
 from the pinned rules.json, as desktop reads them from its own pinned contract) and runs each over the
 export its edition takes, so a change an edition's scan would refuse turns base's gate red first. A
 case per rule, per import rule and per exception shows each has teeth, and the test fails when a rule
-has no case: each of the browser's cookie, Anthropic-host and framework rules and desktop's fetch,
+has no case, since each scan's rules are a table and the cases are held against that table, not a list
+typed beside it: each of the browser's cookie, Anthropic-host and framework rules and desktop's fetch,
 eval, console and network-client rules, switched off in turn, turned it red. A mutation of
 sshopts.ts, signin.ts and gate.ts was caught.
 The same test holds that the one module only VS Code takes, strip.ts, passes the browser's scan and
@@ -667,7 +668,7 @@ HF-token redaction.
 
 **It cannot** touch anything a student sees (the browser's panel, desktop's MCP text, VS Code's tree
 and commands), any platform API, the three SSH stacks, packaging and store review, or the
-agreements. Base was estimated at about 550 lines; as built at step 9 it is 2,639, 1,493 of them
+agreements. Base was estimated at about 550 lines; as built at step 9 it is 2,668, 1,495 of them
 code, against 37,141 lines of client code (counted on 2026-10-04).
 
 **A feature in practice.** Showing when a spent window resets takes one hpcworker change, one base
@@ -715,7 +716,7 @@ Each step is one pull request. **Hand** marks what you do yourself.
 - **c1, `env set` must refuse credential names.** Right if it is built; D4 recommends not building it.
 - **c2, the apiKeySource rule is vacuous, so drop it.** Vacuous in the browser, but VS Code's laptop
   check (wizard.ts:533-535; at e7526f9 :534-547, which refuses apiKeySource itself) is a real
-  consumer, so signin.ts stays. It was estimated at 11 lines; as built at step 9 it is 92, 37 of
+  consumer, so signin.ts stays. It was estimated at 11 lines; as built at step 9 it is 106, 41 of
   them code.
 - **c2, VS Code is already at TERMS_VERSION 7.** Then only on aa44696, when main had 6 (terms.ts:23);
   main has 7 since grid scripts 9 (4fe5ffd, on main at e7526f9). The conclusion holds: the move takes
@@ -886,8 +887,16 @@ What a student sees change:
   block of Claude Code's settings.json, an .mcp.json), and the credential after `Authorization:
   Basic`, of which `redact` hid only the word Basic and `redactCredentials` nothing; a student's file
   or output that held one shows [redacted] there, and so does a value under a field named `token` or
-  `secret` that is no credential. Each shows [redacted] in a tool's structured result only once
-  `result()` redacts it string by string (below).
+  `secret` that is no credential. Since the third review `redact` runs `redactCredentials`' rules
+  first, so it also hides the second of two Bearer values with no white space between them (compact
+  JSON of request headers), which its own wider Bearer rule had run into; and both functions take a
+  token after a lower-case `bearer`, the value of `AWS_BEARER_TOKEN_BEDROCK` and of a key or token
+  variable written in lower case, and a JSON password or client secret past an escaped quote, where
+  the rest of the value showed. `redact` also takes the value of a name that ends in token, secret,
+  password, passwd, api key, access key or authorization (`DB_PASSWORD=`, `AWS_SECRET_ACCESS_KEY=`),
+  which `redactCredentials` leaves; the word bearer in a sentence loses the word after it (in
+  `redactCredentials`, a word of eight characters or more). Each shows [redacted] in a tool's
+  structured result only once `result()` redacts it string by string (below).
 - **Line cleaning.** `cleanLine` also strips a charset designation (ESC ( B, which `tput sgr0`
   prints), as hpcworker's and the browser's cleaners do; a step or status line glued after one read
   as text, so a connect ended without its result. It also strips a NUL first, as `hpcw_strip_codes`
@@ -929,8 +938,13 @@ What its code changes, with nothing a student sees:
   result changes shape; `describeSteps` adapts to keep its sentences.
 - `progressLines` returns `{at, text, id?, argument?}`; `worker_log` prints `${at} ${text}` to keep
   its output byte for byte.
-- `parseWorkerStatus` (desktop's `parseStatusJson`) and `stoppedLine` return undefined where they
-  returned null; `parseAccounts`
+- `parseWorkerStatus` (desktop's `parseStatusJson`), `stoppedLine`, `parseStepLine`,
+  `parseGateVersion`, `gateReadFailure` and `openLinkOf` (desktop's `linkOf`) return undefined where
+  they returned null. Desktop's callers at 9ce98bb that test truthiness are unaffected (grid.ts:192
+  `if (!v)`, :211, :257, :283 and :361, and tools.ts:67), but grid.ts:240 keeps the steps with
+  `.filter((s): s is Step => s !== null)`: the type predicate hides the change from the compiler, so
+  it still compiles against base, lets every line that is no step through as undefined, and the first
+  property read on one throws. It becomes `s !== undefined`. `parseAccounts`
   returns null for a text that is not JSON or not an object, and every other refusal as codes, each
   with `beeMayTake` where bee might take the value.
 - Names desktop's callers change: `StatusJson` becomes `WorkerStatus` and `parseStatusJson`
@@ -1009,7 +1023,7 @@ What a student sees change:
 - **Redaction.** As desktop's `redact`: the `hf_` rule, the GitHub token's boundary, and the
   private-key block, the short key variables and the JSON credential fields (15.1), and the second
   review's three rules: a JSON `token` or `secret` field, a key variable written as a quoted JSON
-  key, and an HTTP Basic credential.
+  key, and an HTTP Basic credential; and the third review's, as desktop's (15.1).
 - **Diagnostics.** As VS Code's, in 15.3, with the browser's 60 s guard and `fixAction` renamed
   `fix`: a check that answers no verdict fails alone as crashed, where the whole run rejected and no
   report was stored; `skip` and `warn` count only when exactly true, so a check that answers
@@ -1026,11 +1040,24 @@ What its code changes, with nothing a student sees:
   `ENVIRONMENT_LINK` and `SESSION_LINK`, anchored, so they cannot be spliced into a new RegExp.
 - `StatusFile.state` is optional and has no "unknown": the browser maps an absent state to its own;
   `pid` is a number only.
-- facts.ts `badLinkOf` (lines 130-134) reads base's `refused` (`status.session_url`,
-  `connection.environment_url`), since base drops a bad link before the browser sees it. A "" is
-  never in `refused`, in either file, so a worker online whose link is not printed yet still shows
-  connecting, as `reportedLinks`' filter of "" (facts.ts:103-105) makes it today, and a resumed
-  session's empty environment link is no bad link.
+- facts.ts `badLinkOf` (lines 130-134) works over the links the stored files report, but base drops a
+  bad link from the file it returns and names the field in `refused`, in the form each reader gives:
+  `session_url` and `environment_url` from `readStatusFile` and `readConnectionFile` (the files the
+  portal listing and the gate's read bring, background.ts:2803-2804 and 3539-3540), and
+  `status.session_url` and the like, prefixed, from `parseWorkerStatusLine` (the status line, whose
+  `status` part background.ts:2876 applies). `RunState` keeps only the files (facts.ts:40 and 43),
+  applies each at its own time, and `runFacts` computes `badLinkOf` later, so `RunState` gains a
+  record of the refused link fields beside each file, filled from the file readers' keys as they are
+  and from the status line's `status.` (and `connection.`) keys with the prefix removed, kept with its
+  file and replaced whenever that file is taken (`applyStatus`, `applyStatusRead`,
+  `applyConnection`). `badLinkOf` is then true when either record holds `session_url` or
+  `environment_url` and no Claude Code link is reported (the rc.log registration holds only links
+  `linksIn` found, never a bad one). Without that record `facts.badLink` is never set, and a worker
+  online whose file names a link that is not Claude Code's shows connecting instead of today's
+  "Online, but the link looks wrong" (model.ts:262). A "" is never in `refused`, in either file, so a
+  worker online whose link is not printed yet still shows connecting, as `reportedLinks`' filter of
+  "" (facts.ts:103-105) makes it today, and a resumed session's empty environment link is no bad
+  link.
 - `claudeLinkOf` and `environmentLinkOf` already use base's order; the rc.log registration stays the
   browser's, as `openLinkOf(run) ?? openLinkOf({ status: run.registration })`. `parseRegistration`
   (contract.ts:1079-1090) finds its links with base's `linksIn`, keeping the last environment link
@@ -1070,19 +1097,44 @@ What a student sees change:
   fingerprint and the port are a Wayne State constant in VS Code, copied from hpcworker's wayne.json
   (`ssh_host_key` SHA256:kLTz1xK6anQ1denM+31kDEryQtgan2P76r9aLno+K3s, `ssh_port` 22, as base's
   test/profiles/wayne.json holds them) and recorded there as temporary until 7.0.0 reads the profile;
-  a change of the grid's key then needs a VS Code release. Every call also gains `CheckHostIP=no`,
+  a change of the grid's key then needs a VS Code release. Every ssh base's options reach, batch or
+  sign-in (next bullet), also gains `CheckHostIP=no`,
   `UpdateHostKeys=no`, `VerifyHostKeyDNS=no`, `GlobalKnownHostsFile` set to that file (the
   system-wide known_hosts is no longer read), `KnownHostsCommand=none` when VS Code passes
   `opensshVersion` (the line `ssh -V` printed) of 8.5 or later, `ForwardAgent=no`, `ForwardX11=no`,
   `ClearAllForwardings=yes` (a forward the student's configuration sets for the alias is dropped on
-  VS Code's own calls), `PermitLocalCommand=no`, `LogLevel=ERROR` (ssh's warnings no longer reach VS
-  Code's logs), `NoHostAuthenticationForLocalhost=no`, `ControlPath=none` and `ControlMaster=no` (VS
+  VS Code's own calls and its sign-in terminals), `PermitLocalCommand=no`,
+  `NoHostAuthenticationForLocalhost=no`, `ControlPath=none` and `ControlMaster=no` (VS
   Code shares no connection and passes no control path, so a master the student's own ssh opened
   through a `ControlMaster` line no longer carries VS Code's calls with no key checked) and the
-  port. `scp()` (shell.ts:188-189, the install step at wizard.ts:738) passes
+  port; a batch call keeps the `BatchMode=yes` it passes today and also gains `LogLevel=ERROR` (ssh's
+  warnings no longer reach VS Code's logs). `scp()` (shell.ts:188-189, the install step at wizard.ts:738) passes
   `tool: 'scp'`, which gives `-P`: scp reads `-p` as "keep the times" and the port as a local file
   (`scp: stat local "22"`, measured). relay.ts keeps its own `ServerAliveInterval=30`, since base
   sets no keep-alive.
+- **Which session each ssh is.** Base adds `BatchMode=yes` and `LogLevel=ERROR` only to a session
+  `batch`: it fails rather than asks. A session `sign-in` is the student's own ssh in a terminal,
+  where ssh's prompts are the point, and gets every other option. VS Code's ssh at e7526f9, by
+  session:
+  - `batch`, the calls no person watches: shell.ts `ssh()` and `scp()` (`SSH_BATCH_OPTS`,
+    shell.ts:135, 142-143 and 188-189), relay.ts:40 and wizard.ts:178 `testConnection`.
+  - `sign-in`, the five terminals the student types in, each started through `runInteractive` for an
+    ssh command: wizard.ts:451 (the OpenSSH fallback of the key step, where the student types the
+    grid password and the one-time code), wizard.ts:629 and extension.ts:815 (the Claude sign-in
+    sitting), extension.ts:819 (Remote Control's consent) and extension.ts:694 (uninstall). Base's
+    fragment goes in where the terminal is started for an ssh command, ahead of the caller's
+    arguments: vscode/ui.ts:51-54 already puts its own two options there, while vscode/panel.ts:81-85
+    and the CLI's cli/terminalUi.ts:69 pass the arguments as they come. A `batch` fragment on
+    wizard.ts:451 would end the key step, since the password and code prompts never appear.
+    wizard.ts:451 also drops its own `StrictHostKeyChecking=accept-new`: ssh keeps the first value of
+    a repeated option (`ssh -G -F /dev/null -o StrictHostKeyChecking=accept-new -o
+    StrictHostKeyChecking=yes x` prints `stricthostkeychecking accept-new`), so ahead of base's
+    fragment it would undo the pin.
+  - Undecided: the student's grid terminal (extension.ts:850, opened with `createTerminal` on the
+    alias, not through `runInteractive`). Step 13 decides it in its pull request: either `sign-in`,
+    and then `ClearAllForwardings=yes` and `ForwardAgent=no` stop the student's own forwards and agent
+    forwarding there too, or left on the alias and recorded as trust on first use, as the node
+    windows below are. Until step 13 says, it stays on the alias.
 - **Which name the pin is for.** VS Code reaches the grid through its alias, whose `HostName` is
   `warrior.grid.wayne.edu` (cli/main.ts:45, `loginHost`, rendered by sshConfig.ts), while the pin in
   wayne.json is the key `grid.wayne.edu:22` answered on 2026-10-02, the profile's `ssh_host`. Base
@@ -1101,7 +1153,10 @@ What a student sees change:
   argv, cannot reach them. At step 13 VS Code gives both a `hostVerifier` that computes the SHA-256
   fingerprint of the key it is offered (base64 with the padding removed, as ssh-keygen -l prints it)
   and refuses unless `fingerprintMatches(pin, seen)`. Until it does, the one connection that carries
-  a secret is the one left unpinned, and step 13 does not pin it.
+  a secret is the one left unpinned, and step 13 does not pin it. The terminal fallback of the same
+  step (wizard.ts:451) carries the same password and code over OpenSSH, and is pinned only once it
+  takes base's `sign-in` fragment and drops its own `accept-new` (above); left as it is, it stays on
+  trust on first use beside the ssh2 connection.
 - **Remote-SSH's node windows.** The block VS Code manages in ~/.ssh/config (core/sshConfig.ts)
   stays VS Code's, and base's options reach only an ssh VS Code starts itself. Remote-SSH reads the
   block for the compute-node windows (extension.ts:478 and 496, `vscode-remote://ssh-remote+<node>.<nodeDomain>`):
@@ -1121,11 +1176,14 @@ What a student sees change:
   where; a list over 64 KB, or one with a `..` step or a control character in a folder, is refused.
 - **Redaction.** `redactCredentials` in gridApi.ts (`beethoven_read_file`) gains the three new
   token rules and the second review's three (a JSON `token` or `secret` field, a key variable
-  written as a quoted JSON key, an HTTP Basic credential), so a student's file holding one shows
-  [redacted] there. diagReport.ts's `scrub` stays VS Code's: replaced by base's `redact`, tokens would read
+  written as a quoted JSON key, an HTTP Basic credential) and the third review's wider rules (a token
+  after a lower-case `bearer`, `AWS_BEARER_TOKEN_BEDROCK` and a key or token variable in any case, a
+  JSON credential field past an escaped quote), so a student's file holding one shows [redacted]
+  there. diagReport.ts's `scrub` stays VS Code's: replaced by base's `redact`, tokens would read
   [redacted] instead of `<token>`, and its JWT and short-fragment rules would go.
 - **Diagnostics.** Base writes none of the engine's seven sentences; VS Code passes its own as
-  `words` (the test's VS Code words reproduce today's details letter for letter over 3,200 runs),
+  `words` (the test's VS Code words reproduce today's details letter for letter over 1,600 runs, and
+  the browser's words the browser's over another 1,600),
   its 90 s timeout and the repairs' 300 s as the `guard`, and `Date.now` as `now`, which VS Code
   needs: it names its saved report by `started` and shows `finished` in the status bar. A check that
   answers no verdict fails alone as crashed, where `run()` rejected; a thrown text passes through;
@@ -1212,14 +1270,23 @@ Each is base's to change, in a pull request of its own, and a change reaches eve
   its schema should refuse them too, and carry the absolute-path, time-form and distinct rules.
   `beeMayTake` is set wherever bee's lax parsing or its `fromisoformat` might take the value, the
   cautious side, so an edition points to bee only where bee is sure to name the fault.
-- **redact.ts.** `redact` takes every credential shape `redactCredentials` takes, so output is never
-  redacted less than a file. Whether base gains a JWT rule, so that VS Code's `scrub` could move to
+- **redact.ts.** `redact` runs `redactCredentials`' rules first and its own after them, so output is
+  never redacted less than a file, by construction: the third review found its own rules alone
+  losing a value, since a rule that ends at white space ran through a quote or a comma and took the
+  next value's keyword with it (two Bearer values in compact JSON). The third review also widened
+  four rules, each in the sets that hold it: the JSON credential field past an escaped quote, the key
+  or token variable with `AWS_BEARER_TOKEN_BEDROCK` and in any case (on Windows another case is the
+  same variable), Bearer in any case (as HTTP reads the scheme; the word as written is kept), and
+  `redact`'s general rule over a name that ends in its word and over access key; a name that holds
+  the word with more after it (`max_tokens=`) stays. Whether base gains a JWT rule, so that VS Code's `scrub` could move to
   base. The second review added three rules to both sets: a JSON field named `token` or `secret`
   (which also hides a value under such a name that is no credential, in a student's file too), the
   key variables written as a quoted JSON key, and HTTP Basic, counted only after an Authorization
   header rather than after any word Basic as the review suggested, so the word basic in a sentence
   stays. Still let through: a JSON Web Token on its own, a password in a link, a credential under
-  any other field name. Both functions are for text: an edition that redacts a structured value
+  any other field name, and a variable whose name ends in key alone (`SSH_KEY=`); by
+  `redactCredentials` alone, a variable of another service named for a credential (`DB_PASSWORD=`,
+  `AWS_SECRET_ACCESS_KEY=`), which `redact`'s general rule takes. Both functions are for text: an edition that redacts a structured value
   redacts each string inside it (15.1).
 - **diagnostics.ts.** Whether the editions rename their fix field or map it; a refused graph still
   rejects `runDiagnostics` (the browser's `runChecks` has no catch, so no report is saved); base

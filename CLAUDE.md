@@ -12,7 +12,7 @@ calls and their SSH stacks. The skeleton (design section 10, step 6) was rebuilt
 the ecosystem's interface standard; the first of the 13 modules, `profile.ts`, came before step 9
 (Linear BEE-218), alone in the `desktop` and `browser` exports at version 1. Step 9 brought the other
 12, filled those two exports and added `vscode`; all three are version 1, since the change is
-additive. The 13 are about 2,600 lines, about 1,500 of them code and the rest comments, which say
+additive. The 13 are about 2,700 lines, about 1,500 of them code and the rest comments, which say
 why, and blank lines (the design's estimate was about 550). Vendor: Gregory Schwing, trading as
 OpenSpineConsortium. Beethoven runs Claude Code and is not an Anthropic product; "Claude" and
 "Claude Code" are Anthropic's marks, used here to say what it runs; "Open OnDemand" is the mark of

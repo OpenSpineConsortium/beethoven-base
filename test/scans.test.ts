@@ -83,19 +83,28 @@ function desktopScan(name: string, text: string): string[] {
 const BANNED = new RegExp(['prov', 'enance'].join(''), 'i');
 const KEPT = [/ASHLEY\(\?:REV\)\?1/g, /ASHLEY(?:REV)?1/g, /\/shared\/ashley\//g];
 
-/** the browser's findings for one file, as `<name>:<line>: <what>` or `<name>: <what>` */
+// its checks over a whole file, each with what it finds
+const BROWSER_TEXT_RULES: Array<[RegExp, string]> = [
+  [/document\s*\.\s*cookie|cookieStore|browser\.cookies|chrome\.cookies/, 'reads a cookie'],
+  [/(host_permissions|matches)\s*:[^\n]*(anthropic|claude)\./, 'a host on an Anthropic domain'],
+  [/licen[cs]e[ -]key|site key|personal key|trial key|ASHLEY1'|save-key|isSiteKey|USERNAME_RE|licenceIdentity|LICENSE_KEY/, 'key wording'],
+  [/document\.cookie/, 'document.cookie'],
+  [/['"`]\/framework\/|files\.json|bundledFrameworkVersion/, 'a framework file'],
+  [BANNED, 'the banned word'],
+];
+// its checks line by line, each with what it finds
+const BROWSER_LINE_RULES: Array<[(line: string) => boolean, string]> = [
+  [(l) => !/^\s*(?:\/\/|\*|\/\*)/.test(l) && /['"`][^'"`]*framework\//.test(l), 'names a framework path in a string'],
+  [(l) => /ashley/i.test(KEPT.reduce((s, re) => s.replace(re, ''), l)), 'the old name'],
+];
+
+/** the browser's findings for one file, as `<name>: <what>` for a whole-file rule, then `<name>:<line>: <what>` */
 function browserScan(name: string, text: string): string[] {
   const out: string[] = [];
-  if (/document\s*\.\s*cookie|cookieStore|browser\.cookies|chrome\.cookies/.test(text)) out.push(`${name}: reads a cookie`);
-  if (/(host_permissions|matches)\s*:[^\n]*(anthropic|claude)\./.test(text)) out.push(`${name}: a host on an Anthropic domain`);
-  if (/licen[cs]e[ -]key|site key|personal key|trial key|ASHLEY1'|save-key|isSiteKey|USERNAME_RE|licenceIdentity|LICENSE_KEY/.test(text)) out.push(`${name}: key wording`);
-  if (/document\.cookie/.test(text)) out.push(`${name}: document.cookie`);
-  if (/['"`]\/framework\/|files\.json|bundledFrameworkVersion/.test(text)) out.push(`${name}: a framework file`);
+  for (const [re, what] of BROWSER_TEXT_RULES) if (re.test(text)) out.push(`${name}: ${what}`);
   text.split('\n').forEach((l, i) => {
-    if (!/^\s*(?:\/\/|\*|\/\*)/.test(l) && /['"`][^'"`]*framework\//.test(l)) out.push(`${name}:${i + 1}: names a framework path in a string`);
-    if (/ashley/i.test(KEPT.reduce((s, re) => s.replace(re, ''), l))) out.push(`${name}:${i + 1}: the old name`);
+    for (const [finds, what] of BROWSER_LINE_RULES) if (finds(l)) out.push(`${name}:${i + 1}: ${what}`);
   });
-  if (BANNED.test(text)) out.push(`${name}: the banned word`);
   return out;
 }
 
@@ -168,7 +177,7 @@ describe("the browser's scan (beethoven-extension ae11a00 extension/test/hygiene
     expect(browserScan('src/x.ts', `// the ${['prov', 'enance'].join('')} of a file`)).toEqual(['src/x.ts: the banned word']);
   });
 
-  it('has teeth for every rule: a cookie, an Anthropic host, key wording, a framework file or path, the old name, the banned word', () => {
+  it('has teeth for every rule: a cookie, an Anthropic host, key wording, a framework file or path, the old name, the banned word; and no rule goes without a case', () => {
     const cases: Array<[string, string[]]> = [
       ['const c = cookieStore.get(name);', ['src/x.ts: reads a cookie']],
       ['const c = browser.cookies.getAll({});', ['src/x.ts: reads a cookie']],
@@ -186,10 +195,9 @@ describe("the browser's scan (beethoven-extension ae11a00 extension/test/hygiene
       ["// see 'lib/framework/x'", []],
     ];
     for (const [text, want] of cases) expect(browserScan('src/x.ts', text), text).toEqual(want);
+    // the expected set is the rule tables' own, so a rule added to either without a case turns this red
     const found = new Set(cases.flatMap(([, want]) => want.map((f) => f.replace(/^[^:]+(?::\d+)?: /, ''))));
-    expect([...found].sort()).toEqual(
-      ['reads a cookie', 'a host on an Anthropic domain', 'key wording', 'document.cookie', 'a framework file', 'names a framework path in a string', 'the old name', 'the banned word'].sort(),
-    );
+    expect([...found].sort()).toEqual([...BROWSER_TEXT_RULES, ...BROWSER_LINE_RULES].map(([, what]) => what).sort());
   });
 });
 
