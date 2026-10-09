@@ -2,16 +2,25 @@
  "format": 1,
  "name": "beethoven-base",
  "repository": "OpenSpineConsortium/beethoven-base",
- "summary": "The shared parsers and rules of the three Beethoven editions: pure TypeScript each edition carries byte for byte inside its own source tree and compiles. The first module is profile.ts, the site profile reader (Linear BEE-218); the other modules, and the VS Code edition's export, arrive with design step 9.",
+ "summary": "The shared parsers and rules of the three Beethoven editions: pure TypeScript each edition carries byte for byte inside its own source tree and compiles. Thirteen modules (profile.ts before design step 9, the other twelve at it): the meaning of what the grid writes, the Claude Code link shapes, the site profile reader, the sign-in, strip and redaction rules, the engine's account list, the ssh options and the diagnostics engine. One export per edition lists the modules that edition takes.",
  "standard": "https://github.com/OpenSpineConsortium/beethoven/blob/main/INTERFACES.md",
  "exports": [
   {
    "id": "desktop",
    "kind": "files",
    "version": 1,
-   "summary": "What the desktop edition compiles into its own source tree: profile.ts, the reader of a deployment's site profile (the keys clients read, the deployment a portal or login node belongs to, the ssh door, the run directories and the path rules).",
+   "summary": "What the desktop edition compiles into its own source tree: the two Claude Code link shapes (links.ts); the HPCW-STEP lines and progress.log (steps.ts); status.json, connection.json and the worker's status line (status.ts); the gate's lines and answers (gate.ts); when a run is stale and which link to open (run.ts); the next step for each failure, as a code (meaning.ts); the site profile reader (profile.ts); the redaction rules (redact.ts); the engine's account list (accounts.ts); and the ssh options with the host key comparison (sshopts.ts).",
    "paths": [
-    "src/profile.ts"
+    "src/links.ts",
+    "src/steps.ts",
+    "src/status.ts",
+    "src/gate.ts",
+    "src/run.ts",
+    "src/meaning.ts",
+    "src/profile.ts",
+    "src/redact.ts",
+    "src/accounts.ts",
+    "src/sshopts.ts"
    ],
    "consumers": [
     "OpenSpineConsortium/beethoven-desktop"
@@ -21,12 +30,39 @@
    "id": "browser",
    "kind": "files",
    "version": 1,
-   "summary": "What the browser edition compiles into its own source tree: profile.ts, the reader of a deployment's site profile (the keys clients read, the deployment a portal or login node belongs to, the ssh door, the run directories and the path rules).",
+   "summary": "What the browser edition compiles into its own source tree: the two Claude Code link shapes (links.ts); the HPCW-STEP lines and progress.log (steps.ts); status.json, connection.json and the worker's status line (status.ts); the gate's lines and answers (gate.ts); when a run is stale and which link to open (run.ts); the next step for each failure, as a code (meaning.ts); the site profile reader (profile.ts); the redaction rules (redact.ts); the subscription sign-in rule (signin.ts); and the diagnostics engine (diagnostics.ts).",
    "paths": [
-    "src/profile.ts"
+    "src/links.ts",
+    "src/steps.ts",
+    "src/status.ts",
+    "src/gate.ts",
+    "src/run.ts",
+    "src/meaning.ts",
+    "src/profile.ts",
+    "src/redact.ts",
+    "src/signin.ts",
+    "src/diagnostics.ts"
    ],
    "consumers": [
     "OpenSpineConsortium/beethoven-extension"
+   ]
+  },
+  {
+   "id": "vscode",
+   "kind": "files",
+   "version": 1,
+   "summary": "What the VS Code edition compiles into its own source tree, laptop side (design step 13): the two Claude Code link shapes (links.ts); the redaction rules (redact.ts); the engine's account list (accounts.ts); the ssh options with the host key comparison (sshopts.ts); the subscription sign-in rule (signin.ts); the variables taken away before Claude Code starts (strip.ts); and the diagnostics engine (diagnostics.ts). None of them imports another. profile.ts and the grid's readers join it at VS Code 7.0.0 (design step 16).",
+   "paths": [
+    "src/links.ts",
+    "src/redact.ts",
+    "src/accounts.ts",
+    "src/sshopts.ts",
+    "src/signin.ts",
+    "src/strip.ts",
+    "src/diagnostics.ts"
+   ],
+   "consumers": [
+    "OpenSpineConsortium/beethoven-vscode"
    ]
   }
  ],
