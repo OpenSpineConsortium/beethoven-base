@@ -191,7 +191,7 @@ describe('rule 1: the repository builds, tests and runs from its own tree', () =
         ].join('\n'),
       ],
       ['d.ts', "'import fakegrid as G',\nfrom beethoven_qa.contracts import x\nconst hub = '../beethoven/INTERFACES.md';"],
-      ['e.ts', "import { x } from '../src/index.js';\nconst me = '../beethoven-base/src';\nconst p = '/rs/rs_grp_oschome/shared/beethoven/hpcworker/current';\n`bash ${sharedInstall}/bin/hpcworker claude login`\n~/.hpcworker and ../hpcworker-notes\nresolve(BASE, '..', 'beethoven-base')\njoin(x, '..', 'hpcworker-notes')"],
+      ['e.ts', "import { x } from '../src/links.js';\nconst me = '../beethoven-base/src';\nconst p = '/rs/rs_grp_oschome/shared/beethoven/hpcworker/current';\n`bash ${sharedInstall}/bin/hpcworker claude login`\n~/.hpcworker and ../hpcworker-notes\nresolve(BASE, '..', 'beethoven-base')\njoin(x, '..', 'hpcworker-notes')"],
       ['f.mjs', "const from = resolve(BASE, '..', 'hpcworker');\nos.path.join(ROOT, \"..\", \"beethoven-extension\", \"x\")\njoin(__dirname, '..', '..', 'beethoven-vscode')"],
       // what a workflow of base's own may hold: GitHub's actions, a local action, a fetch that is not run
       ['g.yml', 'uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n      - uses: ./.github/actions/local\n      - run: npm ci\n      - run: curl -fsSL https://example.org/x.tar.gz | tar xz'],

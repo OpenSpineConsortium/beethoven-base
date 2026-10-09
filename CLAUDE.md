@@ -3,17 +3,20 @@
 The shared parsers and rules of the three Beethoven editions: a small TypeScript library that
 beethoven-desktop, beethoven-extension (the browser edition) and beethoven-vscode each take as a
 pinned copy inside their own source root, with their own `interface/pull.sh`, checked by their own
-tests with no secret against an `ORIGIN` record. It holds once what the editions would otherwise each
-write: the meaning of what the grid writes (the `HPCW-STEP` lines, `status --json`, the gate's
+tests with no secret against an `ORIGIN` record. It holds once what the editions would otherwise
+each write: the meaning of what the grid writes (the `HPCW-STEP` lines, `status --json`, the gate's
 answers), the Claude Code link shapes, the subscription sign-in rule, the strip and redaction lists,
 the diagnostics engine. A fix made here reaches every edition the same way. It holds nothing a
 student reads and nothing that runs: the editions keep their UI, their sentences, their platform
 calls and their SSH stacks. The skeleton (design section 10, step 6) was rebuilt on 2026-10-08 to
 the ecosystem's interface standard; the first of the 13 modules, `profile.ts`, came before step 9
-(Linear BEE-218), and the other 12, about 500 lines, come with it. Vendor:
-Gregory Schwing, trading as OpenSpineConsortium. Beethoven runs Claude Code and is not an Anthropic
-product; "Claude" and "Claude Code" are Anthropic's marks, used here to say what it runs; "Open
-OnDemand" is the mark of its publisher.
+(Linear BEE-218), alone in the `desktop` and `browser` exports at version 1. Step 9 brought the other
+12, filled those two exports and added `vscode`; all three are version 1, since the change is
+additive. The 13 are about 2,600 lines, about 1,500 of them code and the rest comments, which say
+why, and blank lines (the design's estimate was about 550). Vendor: Gregory Schwing, trading as
+OpenSpineConsortium. Beethoven runs Claude Code and is not an Anthropic product; "Claude" and
+"Claude Code" are Anthropic's marks, used here to say what it runs; "Open OnDemand" is the mark of
+its publisher.
 
 ## Read first
 
@@ -36,12 +39,16 @@ OnDemand" is the mark of its publisher.
 
 - hpcworker is canonical for everything it writes: `status.json`, `connection.json`,
   `progress.log`, the `HPCW-STEP` lines, the gate's answers, the site profiles and the contract.
-  Base never defines a format. It parses what hpcworker's real writer makes, and from step 9 its
-  tests run against hpcworker's `contract` export (schemas, line grammar, rules and vectors), taken
-  with `interface/pull.sh` into `test/hpcworker/`. That copy is test data and is in no export. A
-  format changes in hpcworker first, against its contract, then here, then in each edition. The site
+  Base never defines a format. It parses what hpcworker's real writer makes, and its tests run
+  against hpcworker's `contract` export (schemas, line grammar, rules and vectors), taken with
+  `interface/pull.sh` into `test/hpcworker/`. That copy is test data and is in no export. A format
+  changes in hpcworker first, against its contract, then here, then in each edition. What the export
+  does not carry yet (a rule only in prose, a case no vector shows) is design section 6.1's list: a
+  module types it from hpcworker's text and code, and it is added to the export there first. The site
   profile's keys and types are hpcworker's `module-schema` export; `profile.ts` reads only what it
   states, and a key it lacks (a match list, a text bundle) is added there first, then read here.
+  The engine's account list is beethoven-agents' `registry` export, which `accounts.ts` reads by its
+  schema; the rules the schema cannot state are bee's own code, read at a pinned commit.
 - Base reads, runs and copies nothing from another repository's checkout, and imports nothing of an
   edition's. An edition takes base only through its own export, with its own `interface/pull.sh`,
   never edits its copy, and changes base through a pull request here.
@@ -141,8 +148,18 @@ options at once. So a module in `src/` has:
 - **A flat, lower-case `.ts` file**: no folder, no `.d.ts`, no link.
 - **Key, gateway or credential names only on a line that takes one away.** In `strip.ts` that is a
   line holding one quoted upper-case name and a comma; in `redact.ts`, one redaction rule.
+- **Each edition's own scan passes the modules it takes, as that scan is** (design section 3).
+  Several of their rules reach past base's own. Desktop's `scripts/forbidden.mjs` refuses a password
+  handed to ssh, the Claude sign-in's folder, a shell, a deletion and a quoted `watch`, `restrict` or
+  `forget` (gate verbs desktop never sends, so a module desktop takes writes those words only as keys
+  or inside a pattern: `gate.ts`'s `GATE_LIMIT_WORDS`). The browser's `hygiene.test.ts` refuses the
+  old name and key wording in comments too, which base's posture scan never reads.
 
-`tools/posture.mjs` enforces these rules and names each finding with its file and line.
+Which tool holds which rule: `tools/posture.mjs` enforces the platform, import, top-level, file-shape
+and key-name rules, and names each finding with its file and line; the desktop and VS Code lanes hold
+ES2022 (their `lib` is ES2022 alone); `test/scans.test.ts` runs the editions' scans, typed again from
+their text at the refs step 9 read, over the export each edition takes. No tool checks for a sentence
+a student reads; review holds that rule.
 
 The three lanes compile every module of `src/` together, laid out where and as each edition will
 hold its copy, under that edition's options:
@@ -158,8 +175,8 @@ fails (the posture scan refuses the triple-slash directive that would bring them
 compiles one export's modules alone; what keeps an export whole is the export check below, over the
 imports the posture scan allows.
 
-What each edition takes is its export in `interface/INTERFACE.json` (`desktop` and `browser` today,
-`vscode` from step 9; kind `files`, one path per module under `src/`); that file is the one place.
+What each edition takes is its export in `interface/INTERFACE.json` (`desktop`, `browser` and
+`vscode`, each kind `files`, version 1, one path per module under `src/`); that file is the one place.
 `tools/exports.mjs`, run by `npm run posture`, fails an export one of whose paths matches no tracked
 file, an edition's export with a path outside `src/` (its copy lands below the folder all its paths
 share, so every module would move one folder down), or an export that carries a module without a
@@ -231,7 +248,7 @@ npm run gate                 # all of the below, as the pre-push hook and CI run
 npm run typecheck            # the lanes: desktop, browser, vscode (5.9.3), vscode (7.0.2)
 npm run typecheck:tools      # the tools and the tests (checkJs, strict)
 npm run posture              # the source rules over src/, then the export check (tools/exports.mjs)
-npm test                     # vitest: the boundary test, the export check, the posture scan, the profile reader
+npm test                     # vitest: boundary, exports, posture, the editions' scans, each module's test
 bash interface/pull.sh --all # every import, through your own gh sign-in
 ```
 
@@ -279,14 +296,45 @@ bash interface/pull.sh --all # every import, through your own gh sign-in
 
 ## Layout
 
-- `src/`: the modules: `profile.ts` (the site profile reader: the keys clients read with
-  module-schema 1's types, `deploymentFor` by the portal's origin or the login node and never a
-  default, `sshTargetOf`, `stateDirOf`, `expandPath` on a word boundary, `sharedRootOf`,
-  `portalOriginOf`, `restricts`), and the placeholder `index.ts`, which no export lists.
-- `interface/`: `INTERFACE.json` (what base offers and takes; format 1, the exports `desktop` and
-  `browser`, the four test imports), `pull.sh` (base's own puller, ported from beethoven-desktop's,
-  with refusals desktop's lacks: an import folder outside `test/<name>`, a link on the way, a
-  `.part` name) and `README.md`.
+- `src/`: the 13 modules (which edition takes which: `interface/README.md`):
+  - `links.ts`: the two Claude Code link shapes, environment and session, exact matches only, and
+    `linksIn`, the links a text holds;
+  - `steps.ts`: the `HPCW-STEP` lines, the failure codes with their exit statuses, a connect
+    transcript's rules, progress.log's lines, and `cleanLine` (the union of hpcworker's and the
+    editions' terminal codes, and glued keepalives);
+  - `status.ts`: status.json, connection.json and the worker's status line, read field by field, with
+    every field it refused named (the writer's "" in a link and `claude_login` null read as absent,
+    not refused); the stopped line;
+  - `gate.ts`: the gate lines desktop and the browser both send, desktop's remote line, the gate's
+    refusals, caps and read failures with their exit statuses when the caller gives them, a copy
+    without the gate (`no-gate`), the version lines, `FRAMEWORK_MIN` (17);
+  - `run.ts`: R1 and R12 (stale only past 180 s, from the text of `updated_at` or from a heartbeat
+    the edition has timed, `isStaleAt`), and the links to open, session first (`openLinkOf`) or the
+    environment only (`newSessionLinkOf`), per D7;
+  - `meaning.ts`: each failure code and gate answer mapped to a next step, a code and no sentence;
+  - `profile.ts`: the site profile reader (the keys clients read with module-schema 1's types,
+    `deploymentFor` by the portal's origin or the login node and never a default, `sshTargetOf`,
+    `stateDirOf`, `expandPath` on a word boundary, `sharedRootOf`, `portalOriginOf`, `restricts`);
+  - `redact.ts`: the editions' redaction and credential rules, plus `hf_`, GitHub and `github_pat_`,
+    a JSON field named token or secret, a key or token variable as a quoted JSON key, and an HTTP
+    Basic Authorization header; `redact`'s rules take every credential shape too; both are for plain
+    text, never for JSON serialised to be parsed again;
+  - `accounts.ts`: the engine's accounts.json, by its schema and bee's rules, read whole or refused
+    whole, each refusal marked where bee might take the value (`beeRefusesToo`);
+  - `sshopts.ts`: the OpenSSH options of every ssh, scp or sftp to the grid, with the pinned key the
+    only source of host keys when the edition passes its ssh version (8.5 or later, which adds
+    `KnownHostsCommand=none`; design 15.4), no connection shared but the edition's own control path,
+    and `fingerprintMatches`;
+  - `signin.ts`: rules.json's subscription sign-in rule over what `claude auth status` printed (a
+    parsed answer is printed again and read as text), and `signinAnswered`, which tells no answer from
+    an answer of not signed in;
+  - `strip.ts`: rules.json's credential variables (and the two Remote Control ones on request), as
+    an environment without them (`withoutCredentials`) or as overrides (`credentialOverrides`);
+  - `diagnostics.ts`: the check engine, with the edition's words, timeout guard and clock passed in.
+- `interface/`: `INTERFACE.json` (what base offers and takes; format 1, the exports `desktop`,
+  `browser` and `vscode`, the six test imports), `pull.sh` (base's own puller, ported from
+  beethoven-desktop's, with refusals desktop's lacks: an import folder outside `test/<name>`, a link
+  on the way, a `.part` name) and `README.md`.
 - `tools/`:
   - `posture.mjs`: the source rules;
   - `exports.mjs`: every export's paths name tracked files, an edition's stay under `src/`, and each
@@ -304,12 +352,19 @@ bash interface/pull.sh --all # every import, through your own gh sign-in
   - `profile.test.ts`: `profile.ts` once per deployment, real and synthetic; `compose.ts`, the
     composition rule written again from `module-schema` (test code), shown to give hpcworker's own
     profile byte for byte before it composes the example;
-  - `exports.test.ts`, `posture.test.ts`, `index.test.ts`;
+  - one test per module of step 9 (`links`, `steps`, `status`, `gate`, `run`, `meaning`, `redact`,
+    `accounts`, `sshopts`, `signin`, `strip`, `diagnostics`, each `<module>.test.ts`): every pattern,
+    list and number the module types by hand is held equal to the export that carries it, every
+    vector is read through the parser that reads it, and each test's name states the rule it pins;
+  - `scans.test.ts`: desktop's and the browser's source scans, typed again from their text at
+    9ce98bb and ae11a00, run over the export each edition takes;
+  - `exports.test.ts`, `posture.test.ts`;
   - `fixtures.mjs`: throwaway folders and git repositories;
   - the imports, each with its `ORIGIN`, taken with `interface/pull.sh` from GitHub (first on
     2026-10-08; `--pinned --all` took back the same bytes): `profiles/` and `module-schema/`
     (hpcworker), `site-modules/` and `site-examples/` (beethoven-sites' `modules` and
-    `example-modules`); from step 9, `hpcworker/`, hpcworker's `contract` export.
+    `example-modules`), `hpcworker/` (hpcworker's `contract` export) and `registry/` (beethoven-agents'
+    `registry` export).
 - `docs/DESIGN.md`.
 - `.githooks/pre-push`, `.github/workflows/` (`ci.yml`, `automerge.yml`, `rulesets.yml`) and
   `.github/rulesets/main.json`.
@@ -324,4 +379,7 @@ empty list of exports.
   compiler options, a built bundle, a mutation that must turn a test red.
 - **Say plainly what is not known.** "Not yet measured" is the preferred form. Not yet measured:
   - whether each edition's own scans and bundlers accept an `ORIGIN` file inside its source folder;
+  - whether each edition's own suite runs the modules it takes (steps 10, 11 and 13; at step 9 only
+    the lanes, each export compiled alone, and the editions' scans rewritten from their text, now
+    `test/scans.test.ts`, ran);
   - the organisation's GitHub plan, which decides the environments.
