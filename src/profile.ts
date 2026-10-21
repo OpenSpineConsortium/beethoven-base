@@ -30,6 +30,17 @@ export interface SiteProfile {
   site?: string;
   display_name?: string;
   submit_host?: string;
+  /** the partition and QoS for short and test jobs (jobClassOf's cpu) */
+  partition_cpu?: string;
+  qos_cpu?: string;
+  /** the partition and QoS for long jobs, when the lab keeps one apart (jobClassOf's batch) */
+  partition_cpu_batch?: string;
+  qos_batch?: string;
+  /** the GPU partitions in order of preference, and their QoS (jobClassOf's gpu) */
+  partitions_gpu?: string[];
+  qos_gpu?: string;
+  /** the allocation account every job names, when the site needs one */
+  account?: string;
   /** the run directories; $USER and $HOME expand (stateDirOf) */
   shared_state_dir?: string;
   /** the lab's shared copy of the framework; empty when the lab keeps none (sharedRootOf) */
@@ -51,6 +62,8 @@ export interface SiteProfile {
   ssh_port?: number;
   /** SHA256:<43 base64 characters>, as ssh-keygen -l prints it; any other key is refused */
   ssh_host_key?: string;
+  /** the compute nodes' domain, reached through the login node while a job of the account runs there (nodeHostOf) */
+  node_domain?: string;
   /** a wss:// or https:// relay to ssh_host, or null for none */
   ssh_relay?: string | null;
   /** days a browser key's line stays valid; null for no expiry */
@@ -90,6 +103,13 @@ export const PROFILE_KEYS = {
   site: 'str',
   display_name: 'str',
   submit_host: 'str',
+  partition_cpu: 'str',
+  qos_cpu: 'str',
+  partition_cpu_batch: 'str',
+  qos_batch: 'str',
+  partitions_gpu: 'list',
+  qos_gpu: 'str',
+  account: 'str',
   shared_state_dir: 'str',
   shared_install: 'str',
   ood_base_url: 'str',
@@ -104,6 +124,7 @@ export const PROFILE_KEYS = {
   ssh_host: 'str',
   ssh_port: 'int',
   ssh_host_key: 'str',
+  node_domain: 'str',
   ssh_relay: 'str_or_none',
   browser_key_days: 'int_or_none',
   session_title: 'str',
@@ -123,6 +144,9 @@ export const WORKER_DEFAULT_KEYS = {
 } as const satisfies Record<keyof WorkerDefaults, string>;
 
 const HOST = /^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?$/;
+// a Slurm partition, QoS or account name as hpcworker's profile allows them; a node's short name
+const SLURM_WORD = /^[A-Za-z0-9_.-]{1,64}$/;
+const NODE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,62})$/;
 const FINGERPRINT = /^SHA256:[A-Za-z0-9+/]{43}$/;
 // https, a host name, an optional port, then the end or a path, query or fragment: no user, no
 // address in brackets, nothing a reader of the address could take for another host
@@ -307,4 +331,90 @@ export function deploymentFor<P extends SiteProfile>(where: Whereabouts, profile
 export function restricts(p: SiteProfile, workerName: string): boolean {
   if (p.restricted === true) return true;
   return (p.restricted_workspaces ?? []).some((x) => x === '*' || x === workerName);
+}
+
+export type JobClass = 'cpu' | 'batch' | 'gpu';
+
+export type JobPlace =
+  | { ok: true; partition: string; qos?: string; account?: string; gpus?: number; requeue: boolean }
+  | ({ ok: false } & Refusal);
+
+/**
+ * Where a job of this class goes, by the rule hpcworker's `job submit` follows (framework 25, its
+ * jobs.sh) and Beethoven for VS Code's workers followed before it: cpu takes partition_cpu and
+ * qos_cpu; batch takes partition_cpu_batch and qos_batch, or cpu's pair where the lab keeps no
+ * batch partition; gpu takes every partitions_gpu entry in order, joined by commas so the scheduler
+ * picks the first that fits, with qos_gpu and the GPU count asked. Only a batch job whose QoS is the
+ * batch QoS named `requeue` may be requeued; every other job is not. Refused when the class has no
+ * partition (`missing`), or a name that is not a Slurm word (`shape`).
+ */
+export function jobClassOf(p: SiteProfile, cls: JobClass, gpus = 1): JobPlace {
+  let partition: string | undefined;
+  let qos: string | undefined;
+  let key = 'partition_cpu';
+  let qosKey = 'qos_cpu';
+  if (cls === 'gpu') {
+    key = 'partitions_gpu';
+    qosKey = 'qos_gpu';
+    const list = (p.partitions_gpu ?? []).filter((g) => g !== '');
+    if (list.some((g) => !SLURM_WORD.test(g))) return { ok: false, key, code: 'shape' };
+    partition = list.join(',');
+    qos = p.qos_gpu;
+    if (!Number.isSafeInteger(gpus) || gpus < 1 || gpus > 16) return { ok: false, key: 'gpus', code: 'shape' };
+  } else if (cls === 'batch' && p.partition_cpu_batch) {
+    key = 'partition_cpu_batch';
+    qosKey = 'qos_batch';
+    partition = p.partition_cpu_batch;
+    qos = p.qos_batch;
+  } else {
+    partition = p.partition_cpu;
+    qos = p.qos_cpu;
+  }
+  if (!partition) return { ok: false, key, code: 'missing' };
+  if (cls !== 'gpu' && !SLURM_WORD.test(partition)) return { ok: false, key, code: 'shape' };
+  if (qos && !SLURM_WORD.test(qos)) return { ok: false, key: qosKey, code: 'shape' };
+  if (p.account && !SLURM_WORD.test(p.account)) return { ok: false, key: 'account', code: 'shape' };
+  const requeue = cls === 'batch' && !!qos && qos === p.qos_batch && p.qos_batch === 'requeue';
+  return {
+    ok: true,
+    partition,
+    ...(qos ? { qos } : {}),
+    ...(p.account ? { account: p.account } : {}),
+    ...(cls === 'gpu' ? { gpus } : {}),
+    requeue,
+  };
+}
+
+/**
+ * sbatch's options for a JobPlace, one per element, as hpcworker's job submit writes them: the
+ * partition, the QoS and the account where named, the GPUs as a gres, a 120 s warning before the
+ * wall time, and --requeue with an appended log or --no-requeue.
+ */
+export function sbatchOptionsOf(place: JobPlace & { ok: true }): string[] {
+  const out = [`--partition=${place.partition}`];
+  if (place.qos) out.push(`--qos=${place.qos}`);
+  if (place.account) out.push(`--account=${place.account}`);
+  if (place.gpus !== undefined) out.push(`--gres=gpu:${place.gpus}`);
+  out.push('--signal=B:TERM@120');
+  if (place.requeue) out.push('--requeue', '--open-mode=append');
+  else out.push('--no-requeue');
+  return out;
+}
+
+export type NodeHost = { ok: true; host: string; via: SshTarget & { ok: true } } | ({ ok: false } & Refusal);
+
+/**
+ * The ssh name of a compute node, `<node>.<node_domain>`, and the login node it is reached through
+ * (Beethoven for VS Code's Host *.<domain> with ProxyJump through the login alias). The scheduler
+ * lets an account in only while a job of its own runs on the node; the edition checks that before it
+ * connects. Refused when the profile names no node domain or no ssh door, or the node is not a
+ * short host name.
+ */
+export function nodeHostOf(p: SiteProfile, node: string): NodeHost {
+  if (!p.node_domain) return { ok: false, key: 'node_domain', code: 'missing' };
+  if (!HOST.test(p.node_domain) || !p.node_domain.includes('.')) return { ok: false, key: 'node_domain', code: 'shape' };
+  if (!NODE.test(node)) return { ok: false, key: 'node', code: 'shape' };
+  const via = sshTargetOf(p);
+  if (!via.ok) return via;
+  return { ok: true, host: `${node.toLowerCase()}.${p.node_domain.toLowerCase()}`, via };
 }
