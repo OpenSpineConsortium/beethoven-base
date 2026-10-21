@@ -1,4 +1,4 @@
 repository OpenSpineConsortium/hpcworker
-commit 3b22e706f773bbf018ef2a5460e948aafb7f7745
+commit 856306560e6a0232e289ecdd409c6e995f0e9194
 export module-schema 1
-sha256 95f362c11de4a3e0387c4bd06891578507e548f1ba0d2022bd8bbcc79d81c98c module-schema.json
+sha256 c497d097207ad3406101d4cc5fa12d5c7149614301910ad602861d4282ae2241 module-schema.json

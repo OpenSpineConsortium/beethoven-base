@@ -10,12 +10,15 @@ import { describe, expect, it } from 'vitest';
 import {
   deploymentFor,
   expandPath,
+  jobClassOf,
+  nodeHostOf,
   portalOriginOf,
   PROFILE_KEYS,
   PROFILE_SCHEMA_VERSION,
   readProfile,
   readProfileText,
   restricts,
+  sbatchOptionsOf,
   sharedRootOf,
   sshTargetOf,
   stateDirOf,
@@ -163,6 +166,39 @@ describe('what each deployment declares', () => {
     expect(profiles.filter((d) => !d.profile.shared_install).map((d) => d.synthetic)).toEqual([true]);
   });
 
+  it("each deployment places a job of each class by its own partitions, QoS and account, as hpcworker's job submit does", () => {
+    for (const d of profiles) {
+      const p = d.profile;
+      const cpu = jobClassOf(p, 'cpu');
+      expect(cpu, d.id).toEqual({ ok: true, partition: p.partition_cpu, ...(p.qos_cpu ? { qos: p.qos_cpu } : {}), ...(p.account ? { account: p.account } : {}), requeue: false });
+      const batch = jobClassOf(p, 'batch');
+      const bq = p.partition_cpu_batch ? p.qos_batch : p.qos_cpu;
+      expect(batch.ok && batch.partition, d.id).toBe(p.partition_cpu_batch || p.partition_cpu);
+      expect(batch.ok && batch.requeue, d.id).toBe(!!p.partition_cpu_batch && bq === 'requeue');
+      const gpu = jobClassOf(p, 'gpu', 2);
+      if ((p.partitions_gpu ?? []).length > 0) {
+        expect(gpu, d.id).toEqual({ ok: true, partition: p.partitions_gpu!.join(','), ...(p.qos_gpu ? { qos: p.qos_gpu } : {}), ...(p.account ? { account: p.account } : {}), gpus: 2, requeue: false });
+      } else {
+        expect(gpu, d.id).toEqual({ ok: false, key: 'partitions_gpu', code: 'missing' });
+      }
+    }
+    // the example names an account and no QoS, where the first university names QoS and no account
+    const ex = profiles.find((d) => d.synthetic)!.profile;
+    expect(ex.account).toBeTruthy();
+    expect(ex.qos_gpu ?? '').toBe('');
+    expect(profiles.some((d) => !d.synthetic && !!d.profile.qos_gpu)).toBe(true);
+  });
+
+  it("each deployment that names its compute nodes' domain reaches a node through its own login node, and the rest refuse", () => {
+    for (const d of profiles) {
+      const n = nodeHostOf(d.profile, 'node7');
+      if (!d.profile.node_domain) expect(n, d.id).toEqual({ ok: false, key: 'node_domain', code: 'missing' });
+      else if (!sshTargetOf(d.profile).ok) expect(n.ok, d.id).toBe(false);
+      else expect(n, d.id).toEqual({ ok: true, host: `node7.${d.profile.node_domain}`, via: sshTargetOf(d.profile) });
+    }
+    expect(profiles.some((d) => !d.synthetic && nodeHostOf(d.profile, 'node7').ok)).toBe(true);
+  });
+
   it('no deployment restricts a worker unless its profile says so', () => {
     for (const d of profiles) expect(restricts(d.profile, 'worker'), d.id).toBe(d.profile.restricted === true);
   });
@@ -279,6 +315,40 @@ describe('the path rules', () => {
     expect(sshTargetOf({ ssh_host: 'a.example.org', ssh_port: 65536, ssh_host_key: key })).toEqual({ ok: false, key: 'ssh_port', code: 'shape' });
     expect(sshTargetOf({ ssh_host: 'a.example.org', ssh_host_key: 'SHA256:short' })).toEqual({ ok: false, key: 'ssh_host_key', code: 'shape' });
     expect(sshTargetOf({ ssh_host: 'a.example.org', ssh_host_key: `MD5:${'A'.repeat(43)}` })).toEqual({ ok: false, key: 'ssh_host_key', code: 'shape' });
+  });
+
+  it('jobClassOf refuses a class with no partition and any name that is not a Slurm word', () => {
+    expect(jobClassOf({}, 'cpu')).toEqual({ ok: false, key: 'partition_cpu', code: 'missing' });
+    expect(jobClassOf({ partition_cpu: 'a b' }, 'cpu')).toEqual({ ok: false, key: 'partition_cpu', code: 'shape' });
+    expect(jobClassOf({ partition_cpu: 'c', qos_cpu: '--x;y' }, 'cpu')).toEqual({ ok: false, key: 'qos_cpu', code: 'shape' });
+    expect(jobClassOf({ partition_cpu: 'c', partition_cpu_batch: 'b', qos_batch: 'q q' }, 'batch')).toEqual({ ok: false, key: 'qos_batch', code: 'shape' });
+    expect(jobClassOf({ partition_cpu: 'c', account: 'a,b' }, 'cpu')).toEqual({ ok: false, key: 'account', code: 'shape' });
+    expect(jobClassOf({ partitions_gpu: [] }, 'gpu')).toEqual({ ok: false, key: 'partitions_gpu', code: 'missing' });
+    expect(jobClassOf({ partitions_gpu: ['g', 'h,i'] }, 'gpu')).toEqual({ ok: false, key: 'partitions_gpu', code: 'shape' });
+    expect(jobClassOf({ partitions_gpu: ['g'], qos_gpu: 'x y' }, 'gpu')).toEqual({ ok: false, key: 'qos_gpu', code: 'shape' });
+    expect(jobClassOf({ partitions_gpu: ['g'] }, 'gpu', 0)).toEqual({ ok: false, key: 'gpus', code: 'shape' });
+    expect(jobClassOf({ partition_cpu: 'c', qos_cpu: 'q' }, 'batch')).toEqual({ ok: true, partition: 'c', qos: 'q', requeue: false });
+  });
+
+  it('only a batch job on the batch QoS named requeue may be requeued, and sbatchOptionsOf says so either way', () => {
+    const p = { partition_cpu: 'c', qos_cpu: 'requeue', partition_cpu_batch: 'b', qos_batch: 'requeue', partitions_gpu: ['g1', 'g2'], qos_gpu: 'gpu' };
+    const batch = jobClassOf(p, 'batch');
+    expect(batch).toEqual({ ok: true, partition: 'b', qos: 'requeue', requeue: true });
+    if (batch.ok) expect(sbatchOptionsOf(batch)).toEqual(['--partition=b', '--qos=requeue', '--signal=B:TERM@120', '--requeue', '--open-mode=append']);
+    expect(jobClassOf(p, 'cpu')).toMatchObject({ ok: true, requeue: false });
+    const gpu = jobClassOf({ ...p, account: 'lab1' }, 'gpu', 4);
+    if (gpu.ok) expect(sbatchOptionsOf(gpu)).toEqual(['--partition=g1,g2', '--qos=gpu', '--account=lab1', '--gres=gpu:4', '--signal=B:TERM@120', '--no-requeue']);
+    else expect.fail('gpu should place');
+  });
+
+  it("nodeHostOf refuses a node that is not a short host name, and a domain that is not a host's", () => {
+    const key = `SHA256:${'A'.repeat(43)}`;
+    const p = { ssh_host: 'login.example.org', ssh_host_key: key, node_domain: 'nodes.example.org' };
+    expect(nodeHostOf(p, 'Cn01')).toEqual({ ok: true, host: 'cn01.nodes.example.org', via: { ok: true, host: 'login.example.org', port: 22, hostKey: key } });
+    for (const bad of ['', '-oProxyCommand=x', 'a.b', 'a b', 'x'.repeat(64)]) expect(nodeHostOf(p, bad), bad).toEqual({ ok: false, key: 'node', code: 'shape' });
+    expect(nodeHostOf({ ...p, node_domain: 'local' }, 'cn01')).toEqual({ ok: false, key: 'node_domain', code: 'shape' });
+    expect(nodeHostOf({ ...p, node_domain: '-x.org' }, 'cn01')).toEqual({ ok: false, key: 'node_domain', code: 'shape' });
+    expect(nodeHostOf({ node_domain: 'nodes.example.org' }, 'cn01')).toEqual({ ok: false, key: 'ssh_host', code: 'missing' });
   });
 
   it('restricts reads restricted and the names in restricted_workspaces', () => {
