@@ -51,7 +51,7 @@
    "id": "vscode",
    "kind": "files",
    "version": 1,
-   "summary": "What the VS Code edition compiles into its own source tree, laptop side (design step 13): the two Claude Code link shapes (links.ts); the redaction rules (redact.ts); the engine's account list (accounts.ts); the ssh options with the host key comparison (sshopts.ts); the subscription sign-in rule (signin.ts); the variables taken away before Claude Code starts (strip.ts); and the diagnostics engine (diagnostics.ts). None of them imports another. profile.ts and the grid's readers join it at VS Code 7.0.0 (design step 16).",
+   "summary": "What the VS Code edition compiles into its own source tree, laptop side (design step 13): the two Claude Code link shapes (links.ts); the redaction rules (redact.ts); the engine's account list (accounts.ts); the ssh options with the host key comparison (sshopts.ts); the subscription sign-in rule (signin.ts); the variables taken away before Claude Code starts (strip.ts); and the diagnostics engine (diagnostics.ts). None of them imports another. profile.ts joined it on 2026-10-21, ahead of design step 16, so the edition places its grid jobs and reaches compute nodes by the site profile (greg's word that day: the grid's Slurm knowledge belongs in base and the profile); the grid's readers join it at VS Code 7.0.0.",
    "paths": [
     "src/links.ts",
     "src/redact.ts",
@@ -59,7 +59,8 @@
     "src/sshopts.ts",
     "src/signin.ts",
     "src/strip.ts",
-    "src/diagnostics.ts"
+    "src/diagnostics.ts",
+    "src/profile.ts"
    ],
    "consumers": [
     "OpenSpineConsortium/beethoven-vscode"

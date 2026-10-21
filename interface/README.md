@@ -16,7 +16,7 @@ and since a module added is an additive change, both kept version 1. Thirteen mo
 | --- | --- | --- |
 | `desktop` | links, steps, status, gate, run, meaning, profile, redact, accounts, sshopts | beethoven-desktop, into `src/base` |
 | `browser` | links, steps, status, gate, run, meaning, profile, redact, signin, diagnostics | beethoven-extension, into `extension/src/base` |
-| `vscode` | links, redact, accounts, sshopts, signin, strip, diagnostics | beethoven-vscode, into `extension/src/base` |
+| `vscode` | links, redact, accounts, sshopts, signin, strip, diagnostics, profile | beethoven-vscode, into `extension/src/base` |
 
 What each module holds:
 
@@ -36,8 +36,10 @@ What each module holds:
 | `strip.ts` | the variables a program removes before it starts Claude Code, as an environment without them or as overrides | nothing |
 | `diagnostics.ts` | the check engine: dependency order, blocked with its root cause, quick and full runs; the words, the timeout and the clock come from the edition | nothing |
 
-VS Code takes no module that reads what the grid writes until its 7.0.0 moves onto hpcworker (design
-step 16): then `profile.ts`, steps, status, gate, run and meaning join its export. Desktop does not take
+VS Code takes `profile.ts` since 2026-10-21, ahead of design step 16, to place its grid jobs and reach
+compute nodes by the site profile rather than by values of its own; it takes no module that reads what
+the grid writes until its 7.0.0 moves onto hpcworker (design step 16), when steps, status, gate, run and
+meaning join its export. Desktop does not take
 signin.ts (status.json carries no `authMethod`) or strip.ts (its ssh drops every such variable by
 pattern), nor diagnostics.ts; the browser does not take accounts.ts (it cannot read the file),
 sshopts.ts (it has its own ssh client) or strip.ts (it starts no program). What changes for each
